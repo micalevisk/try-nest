@@ -1,0 +1,15 @@
+{
+  "name": "try-nest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Micael Levi L. C.",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  }
+}
