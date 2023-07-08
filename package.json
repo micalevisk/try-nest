@@ -1,14 +1,24 @@
 {
   "name": "try-nest",
-  "version": "1.0.0",
+  "version": "0.0.0-development",
   "description": "",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Micael Levi L. C.",
   "license": "ISC",
+  "bin": {
+    "try-nest": "./bin/start-cli.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micalevisk/try-nest"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "dependencies": {
     "node-fetch": "^3.3.0"
   }
