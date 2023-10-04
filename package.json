@@ -1,7 +1,7 @@
 {
   "name": "try-nest",
   "version": "0.0.0-development",
-  "description": "",
+  "description": "A CLI too to help you to get up and running with any NestJS example project.",
   "type": "module",
   "author": "Micael Levi L. C.",
   "license": "ISC",
