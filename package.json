@@ -1,16 +1,12 @@
 {
   "name": "try-nest",
-  "version": "0.0.0-development",
-  "description": "A CLI too to help you to get up and running with any NestJS example project.",
-  "type": "module",
-  "author": "Micael Levi L. C.",
-  "license": "ISC",
+  "version": "0.0.0",
+  "description": "A CLI tool to access NestJS samples easily.",
+  "type": "common",
   "bin": {
-    "try-nest": "./bin/start-cli.js"
+    "try-nest": "bin/try-nest.js"
   },
-  "files": [
-    "bin"
-  ],
+  "files": [],
   "repository": {
     "type": "git",
     "url": "https://github.com/micalevisk/try-nest"
@@ -19,7 +15,30 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "dependencies": {
-    "node-fetch": "^3.3.0"
+  "scripts": {},
+  "keywords": [
+    "nestjs",
+    "nodejs"
+  ],
+  "author": {
+    "name": "Micael Levi L. C.",
+    "url": "https://github.com/micalevisk"
+  },
+  "homepage": "https://github.com/micalevisk/card",
+  "bugs": {
+    "url": "https://github.com/micalevisk/try-nest/issues"
+  },
+  "license": "MIT",
+  "devDependencies": {},
+  "prettier": {
+    "arrowParens": "always",
+    "printWidth": 100,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "endOfLine": "auto",
+    "useTabs": false,
+    "semi": true,
+    "tabWidth": 2
   }
 }
+
