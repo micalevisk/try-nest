@@ -1,0 +1,35 @@
+# try-nest
+
+`try-nest` is a CLI tool that helps you easily get up and running with NestJS sample that are available in the [`nest/sample`](https://github.com/nestjs/nest/tree/master/sample) repository.
+
+## Usage
+
+Just run the following in your terminal:
+
+```sh
+npx try-nest
+## alternatively
+npx try-nestjs
+```
+
+or, if you want to make sure that you're using the latest version available:
+
+```sh
+npx try-nest@latest
+```
+
+This will walk you through a set of interactive options _(detailed below)_ to help you set up your project.
+
+## Arguments
+
+You can _optionally_ provide arguments to the `npx try-nest` command as an alternative to (or in combination with) the interactive experience.
+
+The options are as follows:
+
+| Option   | Alias | Default                              | Description                                                                                                                                         |
+| -------- | ----- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--name` | -n    | Name for the sample being downloaded | Defines the name of the resulting directory where the selected sample will be created. If not supplied, it will be asked in the interactive prompt. |
+
+## Demo
+
+<!-- TODO(micalevisk): add a demo mp4 here -->

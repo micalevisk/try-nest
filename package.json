@@ -1,12 +1,16 @@
 {
   "name": "try-nest",
-  "version": "0.0.0",
+  "version": "0.0.0-development.1",
   "description": "A CLI tool to access NestJS samples easily.",
-  "type": "common",
+  "type": "module",
   "bin": {
-    "try-nest": "bin/try-nest.js"
+    "try-nest": "bin/try-nest.js",
+    "try-nestjs": "bin/try-nest.js"
   },
-  "files": [],
+  "files": [
+    "bin/",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/micalevisk/try-nest"
@@ -15,7 +19,9 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "scripts": {},
+  "scripts": {
+    "format": "prettier --write ."
+  },
   "keywords": [
     "nestjs",
     "nodejs"
@@ -29,7 +35,9 @@
     "url": "https://github.com/micalevisk/try-nest/issues"
   },
   "license": "MIT",
-  "devDependencies": {},
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  },
   "prettier": {
     "arrowParens": "always",
     "printWidth": 100,
@@ -41,4 +49,3 @@
     "tabWidth": 2
   }
 }
-
