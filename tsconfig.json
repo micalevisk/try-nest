@@ -1,0 +1,47 @@
+{
+  "include": ["./src/**/*.ts", "./tests/**/*.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+
+    "baseUrl": ".",
+    "rootDir": "src",
+
+    "declaration": true,
+    "importHelpers": true,
+    "noEmitHelpers": true,
+    "removeComments": true,
+    "sourceMap": true,
+
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    "strictNullChecks": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "noImplicitReturns": false,
+    "noUncheckedIndexedAccess": false,
+    "resolveJsonModule": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "exactOptionalPropertyTypes": false,
+
+    "allowJs": false,
+    "checkJs": false,
+    "importsNotUsedAsValues": "remove",
+    "incremental": false,
+    "skipLibCheck": true,
+    "types": ["node", "vitest/globals"],
+
+    "lib": ["ESNext"],
+    "target": "ES2021",
+    "module": "es2022",
+    "moduleResolution": "node",
+
+    "preserveWatchOutput": false
+  }
+}

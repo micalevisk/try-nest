@@ -1,0 +1,44 @@
+##
+## Release
+##
+## This workflows aims to prepare the package for release to GitHub Package Registry.
+## This can only be triggered manually via GitHub CLI/web.
+##
+## The whole process must take at most 3 minutes.
+##
+
+name: 'Release & publish to NPM Registry'
+
+on:
+  ## Allow triggering this workflow manually via GitHub CLI/web
+  workflow_dispatch:
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      ##########################################################################
+      ######################### Prepare the environment ########################
+      ##########################################################################
+      - name: 'Checkout the repository'
+        uses: actions/checkout@v3
+      - name: 'Use node22'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: 'npm ci --ignore-scripts'
+      ##########################################################################
+      - name: 'Build the project'
+        run: 'npm run build'
+      - name: 'Publish the lib'
+        run: 'npx semantic-release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

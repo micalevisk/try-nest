@@ -4,13 +4,13 @@
   "description": "A CLI tool to access NestJS samples easily.",
   "type": "module",
   "bin": {
-    "try-nest": "bin/try-nest.js",
-    "try-nestjs": "bin/try-nest.js"
+    "try-nest": "./lib/bin/try-nest.cli.js",
+    "try-nestjs": "./lib/bin/try-nest.cli.js"
   },
-  "files": [
-    "bin/",
-    "README.md"
-  ],
+  "files": ["lib/", "README.md"],
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/micalevisk/try-nest"
@@ -20,12 +20,15 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "format": "prettier --write ."
+    "dev": "node --experimental-transform-types --watch ./src/bin/try-nest.cli.ts",
+    "build": "tsc --project tsconfig.build.json",
+    "test": "vitest --config ./vitest.config.ts run",
+    "watch/test": "vitest --config ./vitest.config.ts watch",
+    "typecheck": "vitest --typecheck",
+    "lint": "biome lint --write",
+    "format": "biome format --write"
   },
-  "keywords": [
-    "nestjs",
-    "nodejs"
-  ],
+  "keywords": ["nestjs", "nodejs"],
   "author": {
     "name": "Micael Levi L. C.",
     "url": "https://github.com/micalevisk"
@@ -34,18 +37,29 @@
   "bugs": {
     "url": "https://github.com/micalevisk/try-nest/issues"
   },
+  "release": {
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/git",
+        {
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ]
+    ],
+    "branches": ["main"]
+  },
   "license": "MIT",
   "devDependencies": {
-    "prettier": "^3.5.3"
-  },
-  "prettier": {
-    "arrowParens": "always",
-    "printWidth": 100,
-    "singleQuote": true,
-    "trailingComma": "all",
-    "endOfLine": "auto",
-    "useTabs": false,
-    "semi": true,
-    "tabWidth": 2
+    "@biomejs/biome": "^1.9.4",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^24.0.1",
+    "@vitest/coverage-v8": "^3.2.3",
+    "@vitest/ui": "^3.2.3",
+    "lefthook": "^1.11.13",
+    "semantic-release": "^24.2.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
   }
 }
