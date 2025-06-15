@@ -1,0 +1,30 @@
+name: 'Automated Tests'
+
+on:
+  ## Allow triggering this workflow manually via GitHub CLI/web
+  workflow_dispatch:
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      ##########################################################################
+      ######################### Prepare the environment ########################
+      ##########################################################################
+      - name: 'Checkout the repository'
+        uses: actions/checkout@v3
+      - name: 'Use node22'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: 'npm ci --ignore-scripts'
+      ##########################################################################
+      - name: 'Run tests'
+        run: 'npm run test'
