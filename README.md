@@ -20,15 +20,6 @@ npx try-nest@latest
 
 This will walk you through a set of interactive options _(detailed below)_ to help you set up your project.
 
-## Arguments
-
-You can _optionally_ provide arguments to the `npx try-nest` command as an alternative to (or in combination with) the interactive experience.
-
-The options are as follows:
-
-| Option   | Alias | Default                              | Description                                                                                                                                         |
-| -------- | ----- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--name` | -n    | Name for the sample being downloaded | Defines the name of the resulting directory where the selected sample will be created. If not supplied, it will be asked in the interactive prompt. |
 
 ## Demo
 
