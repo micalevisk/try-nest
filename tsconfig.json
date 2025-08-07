@@ -1,10 +1,10 @@
 {
-  "include": ["./src/**/*.ts", "./tests/**/*.ts"],
+  "include": ["./src", "./tests"],
   "compilerOptions": {
     "noEmit": true,
 
     "baseUrl": ".",
-    "rootDir": "src",
+    "rootDir": ".",
 
     "declaration": true,
     "importHelpers": true,
@@ -35,12 +35,14 @@
     "importsNotUsedAsValues": "remove",
     "incremental": false,
     "skipLibCheck": true,
-    "types": ["node", "vitest/globals"],
+    "types": ["node"],
 
-    "lib": ["ESNext"],
-    "target": "ES2021",
-    "module": "es2022",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "target": "esnext",
+
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
 
     "preserveWatchOutput": false
   }

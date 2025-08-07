@@ -23,8 +23,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "dev": "node --experimental-transform-types --watch ./src/bin/try-nest.cli.ts",
+    "clean": "rm -rf ./lib",
     "build": "tsc --project tsconfig.build.json",
+    "dev": "node --watch --experimental-transform-types --experimental-detect-module ./src/bin/try-nest.cli.ts",
+    "prestart": "npm run build",
+    "start": "node ./lib/bin/try-nest.cli.js",
     "test": "vitest --config ./vitest.config.ts run",
     "watch/test": "vitest --config ./vitest.config.ts watch",
     "typecheck": "vitest --typecheck",

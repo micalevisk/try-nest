@@ -6,9 +6,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       dir: "tests",
-      include: ["*.spec.ts"],
+      include: ["**\/*.spec.ts"],
 
-      globals: true,
+      globals: false,
 
       environment: "node",
       logHeapUsage: true,
