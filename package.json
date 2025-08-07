@@ -7,7 +7,10 @@
     "try-nest": "./lib/bin/try-nest.cli.js",
     "try-nestjs": "./lib/bin/try-nest.cli.js"
   },
-  "files": ["lib/", "README.md"],
+  "files": [
+    "lib/",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22.0.0"
   },
@@ -28,7 +31,10 @@
     "lint": "biome lint --write",
     "format": "biome format --write"
   },
-  "keywords": ["nestjs", "nodejs"],
+  "keywords": [
+    "nestjs",
+    "nodejs"
+  ],
   "author": {
     "name": "Micael Levi L. C.",
     "url": "https://github.com/micalevisk"
@@ -48,18 +54,20 @@
         }
       ]
     ],
-    "branches": ["main"]
+    "branches": [
+      "main"
+    ]
   },
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.1.4",
     "@semantic-release/git": "^10.0.1",
-    "@types/node": "^24.0.1",
-    "@vitest/coverage-v8": "^3.2.3",
-    "@vitest/ui": "^3.2.3",
-    "lefthook": "^1.11.13",
-    "semantic-release": "^24.2.5",
-    "typescript": "^5.8.3",
-    "vitest": "^3.2.3"
+    "@types/node": "^24.2.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "lefthook": "^1.12.2",
+    "semantic-release": "^24.2.7",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }
