@@ -43,6 +43,7 @@
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
 
     "preserveWatchOutput": false
   }
