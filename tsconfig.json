@@ -38,6 +38,7 @@
     "types": ["node"],
 
     "module": "nodenext",
+    "moduleResolution": "nodenext",
     "target": "esnext",
 
     "verbatimModuleSyntax": true,
