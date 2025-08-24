@@ -20,6 +20,8 @@
 
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
     "noImplicitAny": false,
     "noImplicitThis": true,
     "noImplicitReturns": false,
