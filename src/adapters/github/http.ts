@@ -2,10 +2,7 @@ import { TryNestError } from "../../domain/errors.ts";
 import type { FailureKind } from "../../domain/errors.ts";
 import { USER_AGENT } from "./constants.ts";
 
-export type FetchLike = (
-  url: string,
-  init?: RequestInit,
-) => Promise<Response>;
+export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 export function defaultHeaders(): Record<string, string> {
   return { "user-agent": USER_AGENT };
@@ -21,7 +18,10 @@ export function translateHttpFailure(
 ): TryNestError {
   const remaining = response.headers.get("x-ratelimit-remaining");
 
-  if ((response.status === 403 || response.status === 429) && remaining === "0") {
+  if (
+    (response.status === 403 || response.status === 429) &&
+    remaining === "0"
+  ) {
     const reset = Number(response.headers.get("x-ratelimit-reset"));
     const waitSeconds = Number.isFinite(reset)
       ? Math.max(0, reset - Math.floor(Date.now() / 1000))

@@ -3,9 +3,9 @@ import { stripArchiveRoot } from "../../../src/adapters/github/codeload-archive-
 
 describe("stripArchiveRoot", () => {
   it("removes the archive's own root directory", () => {
-    expect(stripArchiveRoot("nest-master/sample/01-cats-app/package.json")).toBe(
-      "sample/01-cats-app/package.json",
-    );
+    expect(
+      stripArchiveRoot("nest-master/sample/01-cats-app/package.json"),
+    ).toBe("sample/01-cats-app/package.json");
   });
 
   it("returns null for the root entry itself", () => {

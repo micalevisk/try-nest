@@ -29,6 +29,7 @@ keeps moving.
 | [cli-ux.md](./cli-ux.md) | The user-facing flow, the interactive and scriptable paths, how failures surface |
 | [testing-strategy.md](./testing-strategy.md) | What each layer is responsible for proving |
 | [adr/](./adr/) | Why each significant decision was made, and what it cost |
+| [superpowers/plans/](./superpowers/plans/) | The implementation plan these documents were turned into (a working artifact, not a long-lived one) |
 
 ## Reading order
 

@@ -37,7 +37,9 @@ describe.skipIf(!live)("upstream contract", () => {
     const first = catalog[0];
     if (first === undefined) throw new Error("catalog was empty");
 
-    const response = await fetch(`${RAW_CONTENT_BASE}/${manifestPathFor(first)}`);
+    const response = await fetch(
+      `${RAW_CONTENT_BASE}/${manifestPathFor(first)}`,
+    );
 
     expect(response.ok).toBe(true);
   }, 30_000);

@@ -18,9 +18,7 @@ describe("describeSamples", () => {
 
     const result = await describeSamples(samples, source);
 
-    expect(result[0]?.description).toBe(
-      "describes sample/01-a/package.json",
-    );
+    expect(result[0]?.description).toBe("describes sample/01-a/package.json");
   });
 
   it("swallows a single failure without losing the others", async () => {

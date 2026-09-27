@@ -39,7 +39,9 @@ describe("renderFailure", () => {
 describe("exitCodeFor", () => {
   it("distinguishes user error from environmental failure", () => {
     expect(exitCodeFor(new TryNestError("input-required", "x"))).toBe(2);
-    expect(exitCodeFor(new TryNestError("target-directory-unusable", "x"))).toBe(2);
+    expect(
+      exitCodeFor(new TryNestError("target-directory-unusable", "x")),
+    ).toBe(2);
     expect(exitCodeFor(new TryNestError("sample-not-found", "x"))).toBe(2);
 
     expect(exitCodeFor(new TryNestError("catalog-unavailable", "x"))).toBe(1);

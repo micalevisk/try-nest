@@ -2,7 +2,12 @@ pre-commit:
   commands:
     lint:
       run: npm run lint
+      ## `biome lint --write` and `biome format --write` rewrite files. Without
+      ## this, the fixes land in the working tree but not in the commit, so the
+      ## commit keeps the unformatted version and the tree is left dirty.
+      stage_fixed: true
     format:
       run: npm run format
+      stage_fixed: true
     test:
       run: npm run test

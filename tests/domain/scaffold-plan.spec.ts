@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { TryNestError } from "../../src/domain/errors.ts";
 import type { Sample } from "../../src/domain/sample.ts";
-import { planScaffold, rerootEntryPath } from "../../src/domain/scaffold-plan.ts";
+import {
+  planScaffold,
+  rerootEntryPath,
+} from "../../src/domain/scaffold-plan.ts";
 
 const single: Sample = {
   id: "01-cats-app",
@@ -55,7 +58,9 @@ describe("rerootEntryPath", () => {
   });
 
   it("does not confuse a sibling whose name shares a prefix", () => {
-    expect(rerootEntryPath(plan, "sample/01-cats-app-extra/src/main.ts")).toBeNull();
+    expect(
+      rerootEntryPath(plan, "sample/01-cats-app-extra/src/main.ts"),
+    ).toBeNull();
   });
 
   it("refuses an entry that would escape the target directory", () => {
@@ -65,8 +70,8 @@ describe("rerootEntryPath", () => {
   });
 
   it("refuses an absolute entry path", () => {
-    expect(() => rerootEntryPath(plan, "sample/01-cats-app//etc/passwd")).toThrowError(
-      TryNestError,
-    );
+    expect(() =>
+      rerootEntryPath(plan, "sample/01-cats-app//etc/passwd"),
+    ).toThrowError(TryNestError);
   });
 });

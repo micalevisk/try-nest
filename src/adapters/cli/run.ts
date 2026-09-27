@@ -161,7 +161,9 @@ export async function run(
 
       for (const unit of plan.installUnits) {
         deps.presenter.installing(
-          unit === "." ? plan.targetDirectory : `${plan.targetDirectory}/${unit}`,
+          unit === "."
+            ? plan.targetDirectory
+            : `${plan.targetDirectory}/${unit}`,
         );
       }
 

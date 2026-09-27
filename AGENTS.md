@@ -8,9 +8,9 @@ folder, so you can check one out and run it in seconds.
 
 Published to npm as `try-nest`; repo: <https://github.com/micalevisk/try-nest>.
 
-**Status: unfinished.** `src/bin/try-nest.cli.ts` is still a stub that only prints
-`Work in progress by @micalevisk`. All the scaffolding logic described below is yet to be
-written. The surrounding tooling (build, lint, test, release) is already set up and green.
+**Status: implemented.** The architecture is documented under `docs/` and the CLI
+is built against it. `src/bin/try-nest.cli.ts` is a thin entry point over the
+composition root in `src/adapters/cli/run.ts`.
 
 ## Goal
 
@@ -100,10 +100,11 @@ Also note upstream samples target `@nestjs/*` v12, are `"type": "module"`, and s
 ## Commands
 
 ```sh
-npm run dev        # node --watch on src/bin/try-nest.cli.ts (native TS via --experimental-transform-types)
+npm run dev        # node --watch on src/bin/try-nest.cli.ts (native TS via --experimental-strip-types)
 npm run build      # tsc -p tsconfig.build.json -> ./lib
 npm start          # build, then run ./lib/bin/try-nest.cli.js
-npm test           # vitest run
+npm test           # vitest run (offline; the drift sentinel is skipped)
+npm run test:drift # live check of the upstream assumptions (network)
 npm run typecheck  # vitest --typecheck
 npm run lint       # biome lint --write
 npm run format     # biome format --write
@@ -111,8 +112,4 @@ npm run format     # biome format --write
 
 ## Known rough edges
 
-- `package.json` `homepage` still points at `https://github.com/micalevisk/card`
-  (copy-paste leftover from another project).
-- `tsconfig.build.json` excludes `test`/`**/*spec.ts` but this repo's test dir is `tests/`.
-- `README.md` promises "a set of interactive options _(detailed below)_" that are not
-  documented yet, and has a TODO for a demo video.
+- `README.md` still has a TODO for a demo video.

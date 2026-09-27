@@ -49,9 +49,9 @@ describe("assertTargetDirectoryUsable", () => {
   });
 
   it("refuses a name that would escape the working directory", () => {
-    expect(() => assertTargetDirectoryUsable("../elsewhere", absent)).toThrowError(
-      TryNestError,
-    );
+    expect(() =>
+      assertTargetDirectoryUsable("../elsewhere", absent),
+    ).toThrowError(TryNestError);
   });
 });
 

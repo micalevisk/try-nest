@@ -24,7 +24,9 @@ function fileEntry(path: string, contents: string, mode = 0o644): ArchiveEntry {
   };
 }
 
-async function* streamOf(...entries: ArchiveEntry[]): AsyncIterable<ArchiveEntry> {
+async function* streamOf(
+  ...entries: ArchiveEntry[]
+): AsyncIterable<ArchiveEntry> {
   for (const entry of entries) yield entry;
 }
 

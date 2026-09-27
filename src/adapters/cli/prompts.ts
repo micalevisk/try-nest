@@ -41,7 +41,10 @@ export function createPrompts(): Interaction {
     ): Promise<PackageManager> {
       return select({
         message: "Which package manager?",
-        choices: available.map((manager) => ({ name: manager, value: manager })),
+        choices: available.map((manager) => ({
+          name: manager,
+          value: manager,
+        })),
       });
     },
   };

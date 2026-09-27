@@ -30,7 +30,11 @@ function depsWith(overrides: Partial<RunDependencies> = {}): {
     archive: { entries: () => streamOf([]) },
     writer: { materialize: async () => {} },
     probe: {
-      inspect: async () => ({ exists: false, isDirectory: false, isEmpty: true }),
+      inspect: async () => ({
+        exists: false,
+        isDirectory: false,
+        isEmpty: true,
+      }),
     },
     runner: { detect: async () => ["npm"], install: async () => {} },
     interaction: {

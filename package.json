@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "tsc --project tsconfig.build.json",
-    "dev": "node --watch --experimental-transform-types --experimental-detect-module ./src/bin/try-nest.cli.ts",
+    "dev": "node --watch --experimental-strip-types ./src/bin/try-nest.cli.ts",
     "prestart": "npm run build",
     "start": "node ./lib/bin/try-nest.cli.js",
     "test": "vitest --config ./vitest.config.ts run",
@@ -43,7 +43,7 @@
     "name": "Micael Levi L. C.",
     "url": "https://github.com/micalevisk"
   },
-  "homepage": "https://github.com/micalevisk/card",
+  "homepage": "https://github.com/micalevisk/try-nest",
   "bugs": {
     "url": "https://github.com/micalevisk/try-nest/issues"
   },

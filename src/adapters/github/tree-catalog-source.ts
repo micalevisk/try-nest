@@ -60,7 +60,9 @@ export function createTreeCatalogSource(
       const entries = payload.tree ?? [];
 
       return entries
-        .filter((entry) => entry.type === "blob" && typeof entry.path === "string")
+        .filter(
+          (entry) => entry.type === "blob" && typeof entry.path === "string",
+        )
         .map((entry) => entry.path as string);
     },
   };

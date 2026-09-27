@@ -84,10 +84,12 @@ describe("scaffolding end to end", () => {
       "package.json": '{"name":"monorepo"}',
       "packages/core/index.ts": "export {};",
       "sample/02-gateways/src/main.ts": "export {};",
-      "sample/01-cats-app/package.json": '{"name":"cats","dependencies":{"@nestjs/core":"^12.0.0"}}',
+      "sample/01-cats-app/package.json":
+        '{"name":"cats","dependencies":{"@nestjs/core":"^12.0.0"}}',
       "sample/01-cats-app/tsconfig.json": '{"compilerOptions":{}}',
       "sample/01-cats-app/tsconfig.build.json": '{"extends":"./tsconfig.json"}',
-      "sample/01-cats-app/src/main.ts": 'import { AppModule } from "./app.module.js";',
+      "sample/01-cats-app/src/main.ts":
+        'import { AppModule } from "./app.module.js";',
       "sample/01-cats-app/e2e/cats/cats.e2e-spec.ts":
         'import { CatsModule } from "../../src/cats/cats.module.js";',
     });
@@ -103,7 +105,9 @@ describe("scaffolding end to end", () => {
     await scaffoldSample(plan, archive, createWorkspaceWriter());
 
     // The sample's own files land at the root, not nested under sample/.
-    expect(await readFile(join(target, "package.json"), "utf8")).toContain("cats");
+    expect(await readFile(join(target, "package.json"), "utf8")).toContain(
+      "cats",
+    );
     await expect(stat(join(target, "sample"))).rejects.toThrow();
     await expect(stat(join(target, "packages"))).rejects.toThrow();
 
@@ -135,7 +139,9 @@ describe("scaffolding end to end", () => {
 
     await scaffoldSample(
       plan,
-      createCodeloadArchiveSource({ fetch: async () => archiveResponse(bytes) }),
+      createCodeloadArchiveSource({
+        fetch: async () => archiveResponse(bytes),
+      }),
       createWorkspaceWriter(),
     );
 

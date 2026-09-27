@@ -5,12 +5,13 @@ import { stubResponse } from "../../helpers/fixtures.ts";
 describe("createRawMetadataSource", () => {
   it("reads the description out of a manifest", async () => {
     const source = createRawMetadataSource({
-      fetch: async () => stubResponse({ body: { description: "Cats, but REST" } }),
+      fetch: async () =>
+        stubResponse({ body: { description: "Cats, but REST" } }),
     });
 
-    expect(await source.readDescription("sample/01-cats-app/package.json")).toBe(
-      "Cats, but REST",
-    );
+    expect(
+      await source.readDescription("sample/01-cats-app/package.json"),
+    ).toBe("Cats, but REST");
   });
 
   it("requests the manifest from the raw content host", async () => {
