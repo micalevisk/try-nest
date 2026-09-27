@@ -6,7 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       dir: "tests",
-      include: ["**\/*.spec.ts"],
+      include: ["**/*.spec.ts"],
 
       globals: false,
 

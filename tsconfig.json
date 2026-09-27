@@ -3,7 +3,6 @@
   "compilerOptions": {
     "noEmit": true,
 
-    "baseUrl": ".",
     "rootDir": ".",
 
     "declaration": true,
@@ -34,7 +33,6 @@
 
     "allowJs": false,
     "checkJs": false,
-    "importsNotUsedAsValues": "remove",
     "incremental": false,
     "skipLibCheck": true,
     "types": ["node"],
