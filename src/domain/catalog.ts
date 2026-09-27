@@ -1,3 +1,4 @@
+import { TryNestError } from "./errors.ts";
 import type { Sample } from "./sample.ts";
 
 export const SAMPLES_ROOT = "sample";
@@ -72,4 +73,23 @@ export function manifestPathFor(sample: Sample): string {
       : "";
 
   return `${SAMPLES_ROOT}/${sample.id}${suffix}/${MANIFEST_FILENAME}`;
+}
+
+export function findSample(samples: readonly Sample[], id: string): Sample {
+  const match = samples.find((sample) => sample.id === id);
+  if (match !== undefined) return match;
+
+  const needle = id.toLowerCase();
+  const close = samples
+    .filter((sample) => sample.id.toLowerCase().includes(needle))
+    .slice(0, 5)
+    .map((sample) => sample.id);
+
+  throw new TryNestError(
+    "sample-not-found",
+    close.length === 0
+      ? `No sample named "${id}". Run with --list to see what is available.`
+      : `No sample named "${id}". Did you mean: ${close.join(", ")}?`,
+    { requested: id },
+  );
 }
