@@ -8,6 +8,7 @@ export type FailureKind =
   | "unsafe-archive-entry"
   | "extraction-failed"
   | "install-failed"
+  | "cancelled"
   | "input-required";
 
 export class TryNestError extends Error {

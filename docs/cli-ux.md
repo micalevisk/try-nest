@@ -101,9 +101,11 @@ debris, but if it does, the user must not have to guess where it is.
   stream. A script redirecting output should get data, not decoration.
 - Respect the conventional environment signals for disabling colour, and degrade
   when not attached to a terminal.
-- Exit codes distinguish success, user error (bad input, occupied directory) and
-  environmental failure (network, upstream). Scripts should be able to tell "I
-  asked for the wrong thing" from "the world was broken".
+- Exit codes distinguish success, user error (bad input, occupied directory), a
+  run the user ended themselves at a prompt, and environmental failure (network,
+  upstream). Scripts should be able to tell "I asked for the wrong thing" from
+  "the world was broken", and someone who walked away from a question is
+  neither.
 
 ## Deliberate non-features
 

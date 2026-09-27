@@ -8,13 +8,17 @@ import {
   UPSTREAM_REPOSITORY,
 } from "../github/constants.ts";
 
-/** User error exits 2; an environmental failure exits 1. */
+/** User error exits 2; a run the user ended exits 130; a broken world exits 1. */
 export function exitCodeFor(error: TryNestError): number {
   switch (error.kind) {
     case "input-required":
     case "target-directory-unusable":
     case "sample-not-found":
       return 2;
+    // The conventional code for a run ended by an interactive interrupt, which
+    // is what a shell reports for SIGINT.
+    case "cancelled":
+      return 130;
     default:
       return 1;
   }

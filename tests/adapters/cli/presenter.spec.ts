@@ -37,6 +37,14 @@ describe("renderFailure", () => {
 
     expect(message).toMatch(/incomplete/i);
   });
+
+  it("says only that the run was abandoned, with no advice attached", () => {
+    const message = renderFailure(
+      new TryNestError("cancelled", "Cancelled. Nothing was written."),
+    );
+
+    expect(message).toBe("Cancelled. Nothing was written.");
+  });
 });
 
 describe("exitCodeFor", () => {
@@ -49,6 +57,10 @@ describe("exitCodeFor", () => {
 
     expect(exitCodeFor(new TryNestError("catalog-unavailable", "x"))).toBe(1);
     expect(exitCodeFor(new TryNestError("rate-limited", "x"))).toBe(1);
+  });
+
+  it("uses the interrupt convention when the user ends the run themselves", () => {
+    expect(exitCodeFor(new TryNestError("cancelled", "Cancelled."))).toBe(130);
   });
 });
 
