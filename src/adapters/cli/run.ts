@@ -14,6 +14,7 @@ import type {
 import { scaffoldSample } from "../../application/scaffold-sample.ts";
 import { findSample } from "../../domain/catalog.ts";
 import { TryNestError, isTryNestError } from "../../domain/errors.ts";
+import type { PackageManager } from "../../domain/package-manager.ts";
 import type { Sample } from "../../domain/sample.ts";
 import { planScaffold } from "../../domain/scaffold-plan.ts";
 import {
@@ -122,11 +123,24 @@ export async function run(
     }
 
     // Enrichment is an enhancement: bounded wait, then render regardless.
-    const enriched = await withDeadline(
-      describeSamples(samples, deps.metadata),
-      ENRICHMENT_DEADLINE_MS,
-      samples,
-    );
+    const enrichment = new AbortController();
+    let enriched: readonly Sample[];
+
+    try {
+      enriched = await withDeadline(
+        describeSamples(samples, deps.metadata, {
+          signal: enrichment.signal,
+        }),
+        ENRICHMENT_DEADLINE_MS,
+        samples,
+      );
+    } finally {
+      // The deadline bounds how long we wait, not how long the requests run.
+      // Without this, one request per sample outlives the whole command, and a
+      // stalled metadata host leaves the user staring at a dead terminal after
+      // we already told them we were done.
+      enrichment.abort();
+    }
 
     const sample: Sample =
       inputs.sample === undefined
@@ -136,7 +150,7 @@ export async function run(
     const suggested = defaultTargetDirectoryFor(sample);
     const directory =
       inputs.directory ??
-      (inputs.yes
+      (inputs.yes || !env.interactive
         ? suggested
         : await deps.interaction.chooseTargetDirectory(suggested));
 
@@ -147,17 +161,22 @@ export async function run(
     await scaffoldSample(plan, deps.archive, deps.writer);
 
     let installed = false;
+    let usedManager: PackageManager | undefined;
     const wantsInstall =
       inputs.install ??
-      (inputs.yes ? true : await deps.interaction.confirmInstall());
+      (inputs.yes || !env.interactive
+        ? true
+        : await deps.interaction.confirmInstall());
 
     if (wantsInstall) {
       const available = await deps.runner.detect();
       const manager =
         inputs.packageManager ??
-        (available.length <= 1 || inputs.yes
+        (available.length <= 1 || inputs.yes || !env.interactive
           ? (available[0] ?? "npm")
           : await deps.interaction.choosePackageManager(available));
+
+      usedManager = manager;
 
       for (const unit of plan.installUnits) {
         deps.presenter.installing(
@@ -177,7 +196,7 @@ export async function run(
       }
     }
 
-    deps.presenter.succeeded(plan, installed);
+    deps.presenter.succeeded(plan, installed, usedManager);
     return 0;
   } catch (error) {
     const failure = isTryNestError(error)

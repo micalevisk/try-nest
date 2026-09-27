@@ -79,3 +79,25 @@ describe("createTreeCatalogSource", () => {
     });
   });
 });
+
+describe("createTreeCatalogSource with a hostile response body", () => {
+  it("translates a success whose body is not JSON", async () => {
+    const source = createTreeCatalogSource({
+      fetch: async () =>
+        ({
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => {
+            throw new SyntaxError("Unexpected token '<', \"<html><bod\"...");
+          },
+        }) as unknown as Response,
+    });
+
+    await expect(source.listPaths()).rejects.toMatchObject({
+      kind: "catalog-unavailable",
+    });
+
+    await expect(source.listPaths()).rejects.not.toThrow(SyntaxError);
+  });
+});

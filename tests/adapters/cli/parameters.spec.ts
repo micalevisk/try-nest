@@ -89,3 +89,61 @@ describe("assertSufficientForNonInteractive", () => {
     ).not.toThrow();
   });
 });
+
+describe("parseParameters failure classification", () => {
+  it("reports an unknown flag as bad input, not as a broken world", () => {
+    expect(() => parseParameters(["--turbo"])).toThrowError(
+      expect.objectContaining({ kind: "input-required" }),
+    );
+  });
+
+  it("points at --help rather than restating node's complaint", () => {
+    let message = "";
+    try {
+      parseParameters(["--turbo"]);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toMatch(/--help/);
+  });
+
+  it("tells someone who passed a bare sample name which flag to use", () => {
+    let message = "";
+    try {
+      parseParameters(["01-cats-app"]);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toMatch(/--sample/);
+  });
+});
+
+describe("assertSufficientForNonInteractive message", () => {
+  it("lists several missing flags without an ambiguous 'and'", () => {
+    let message = "";
+    try {
+      assertSufficientForNonInteractive(parseParameters([]));
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain("--sample");
+    expect(message).toContain("--dir");
+    expect(message).toContain("--install/--no-install");
+    expect(message).not.toMatch(/--install or --no-install/);
+  });
+
+  it("does not suggest --yes to someone who already passed it", () => {
+    let message = "";
+    try {
+      assertSufficientForNonInteractive(parseParameters(["--yes"]));
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain("--sample");
+    expect(message).not.toMatch(/--yes/);
+  });
+});

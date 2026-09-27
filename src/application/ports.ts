@@ -59,7 +59,12 @@ export interface Presenter {
   starting(): void;
   scaffolding(plan: ScaffoldPlan): void;
   installing(directory: string): void;
-  succeeded(plan: ScaffoldPlan, installed: boolean): void;
+  /** `manager` is the one actually used, so next steps name the right tool. */
+  succeeded(
+    plan: ScaffoldPlan,
+    installed: boolean,
+    manager?: PackageManager,
+  ): void;
   warn(message: string): void;
   failed(error: TryNestError): void;
 }

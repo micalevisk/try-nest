@@ -35,6 +35,17 @@ Every prompt has a flag, so the whole thing is scriptable:
 | `--list` | Print the available samples and exit |
 | `--json` | Machine-readable output for `--list` |
 | `-h, --help` | Show help |
+| `-v, --version` | Show the version |
+
+With no interactive terminal — in CI, or through a pipe — there is nobody to
+answer a prompt, so every answer has to arrive as a flag: `--sample`, `--dir`
+and an install decision. Pass `--yes` to accept the defaults for all of them
+instead. A missing answer exits `2` naming the flag, rather than waiting on a
+question nobody can see.
+
+Exit codes: `0` success, `2` bad input, `1` something in the world was broken.
+A failed dependency install is a warning, not a failure — the project is
+already on disk and intact.
 
 Samples are read from `nestjs/nest` at run time, so there is no pinned list and
 no compatibility guarantee between versions — always use `@latest`.

@@ -75,3 +75,31 @@ describe("rerootEntryPath", () => {
     ).toThrowError(TryNestError);
   });
 });
+
+describe("rerootEntryPath against Windows separators", () => {
+  const plan = planScaffold(single, "cats");
+
+  it("refuses a backslash traversal, which resolves on Windows", () => {
+    expect(() =>
+      rerootEntryPath(plan, "sample/01-cats-app/..\\..\\escaped.txt"),
+    ).toThrowError(TryNestError);
+  });
+
+  it("refuses a mixed-separator traversal", () => {
+    expect(() =>
+      rerootEntryPath(plan, "sample/01-cats-app/nested\\..\\..\\escaped.txt"),
+    ).toThrowError(TryNestError);
+  });
+
+  it("refuses a backslash-rooted entry", () => {
+    expect(() =>
+      rerootEntryPath(plan, "sample/01-cats-app/\\escaped.txt"),
+    ).toThrowError(TryNestError);
+  });
+
+  it("still accepts an ordinary nested path", () => {
+    expect(rerootEntryPath(plan, "sample/01-cats-app/src/app/main.ts")).toBe(
+      "src/app/main.ts",
+    );
+  });
+});

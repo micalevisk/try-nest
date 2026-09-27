@@ -46,7 +46,18 @@ export function createTreeCatalogSource(
         throw translateHttpFailure(response, "catalog-unavailable");
       }
 
-      const payload = (await response.json()) as TreeResponse;
+      let payload: TreeResponse;
+
+      try {
+        payload = (await response.json()) as TreeResponse;
+      } catch {
+        // A captive portal or an intercepting proxy answers 200 with HTML. The
+        // parser's complaint about an unexpected "<" is not an answer.
+        throw new TryNestError(
+          "catalog-unavailable",
+          "GitHub answered, but not with a repository listing. Something on this network may be intercepting the request.",
+        );
+      }
 
       // A truncated listing arrives as a success with partial results. A loud
       // failure is vastly preferable to a catalog that is quietly incomplete.

@@ -1,4 +1,13 @@
+import { mkdtemp, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { createCodeloadArchiveSource } from "../../src/adapters/github/codeload-archive-source.ts";
+import { createWorkspaceWriter } from "../../src/adapters/fs/workspace-writer.ts";
+import { scaffoldSample } from "../../src/application/scaffold-sample.ts";
+import type { Sample } from "../../src/domain/sample.ts";
+import { planScaffold } from "../../src/domain/scaffold-plan.ts";
+import { findEscapes } from "../helpers/standalone.ts";
 import {
   ARCHIVE_ENDPOINT,
   RAW_CONTENT_BASE,
@@ -49,4 +58,51 @@ describe.skipIf(!live)("upstream contract", () => {
 
     expect(response.ok).toBe(true);
   }, 30_000);
+});
+
+/**
+ * Assumption S5 — each `sample/*` is self-contained — is the expensive one, and
+ * the only defence against it drifting is to notice. The offline e2e test
+ * asserts the invariant against an archive it invents, so it can never see
+ * upstream change. This scaffolds real samples from the real archive.
+ */
+describe.skipIf(!live)("upstream self-containment (S5)", () => {
+  async function scaffoldFromUpstream(sample: Sample): Promise<string> {
+    const root = await mkdtemp(join(tmpdir(), "try-nest-drift-"));
+    const target = join(root, sample.id);
+
+    await scaffoldSample(
+      planScaffold(sample, target),
+      createCodeloadArchiveSource(),
+      createWorkspaceWriter(),
+    );
+
+    return target;
+  }
+
+  it("a real single sample scaffolds standalone", async () => {
+    const catalog = buildCatalog(await createTreeCatalogSource().listPaths());
+    const single = catalog.find((entry) => entry.layout === "single");
+    if (single === undefined) throw new Error("no single sample upstream");
+
+    const target = await scaffoldFromUpstream(single);
+
+    expect(await readdir(target)).toContain("package.json");
+    expect(await findEscapes(target)).toEqual([]);
+  }, 300_000);
+
+  it("a real composite sample scaffolds standalone, with every sub-project", async () => {
+    const catalog = buildCatalog(await createTreeCatalogSource().listPaths());
+    const composite = catalog.find((entry) => entry.layout === "composite");
+    if (composite === undefined)
+      throw new Error("no composite sample upstream");
+
+    const target = await scaffoldFromUpstream(composite);
+
+    for (const unit of composite.subProjects) {
+      expect(await readdir(join(target, unit))).toContain("package.json");
+    }
+
+    expect(await findEscapes(target)).toEqual([]);
+  }, 300_000);
 });

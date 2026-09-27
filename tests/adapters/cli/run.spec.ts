@@ -155,3 +155,123 @@ describe("run", () => {
     expect(lines.some((line) => line.startsWith("warn:"))).toBe(true);
   });
 });
+
+describe("run without a terminal", () => {
+  function refusingInteraction(): RunDependencies["interaction"] {
+    const refuse = (name: string) => async (): Promise<never> => {
+      throw new Error(`prompted for ${name} with no terminal`);
+    };
+
+    return {
+      chooseSample: refuse("sample") as never,
+      chooseTargetDirectory: refuse("directory") as never,
+      confirmInstall: refuse("install") as never,
+      choosePackageManager: refuse("package manager") as never,
+    };
+  }
+
+  it("never prompts for an install decision", async () => {
+    const root = await mkdtemp(join(tmpdir(), "try-nest-run-"));
+    const { deps, lines } = depsWith({ interaction: refusingInteraction() });
+
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", join(root, "cats")],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(2);
+    expect(lines).toContain("failed:input-required");
+  });
+
+  it("never prompts for a package manager", async () => {
+    const root = await mkdtemp(join(tmpdir(), "try-nest-run-"));
+    const { deps, lines } = depsWith({
+      interaction: refusingInteraction(),
+      runner: {
+        detect: async () => ["npm", "pnpm", "yarn"],
+        install: async () => {},
+      },
+    });
+
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", join(root, "cats"), "--install"],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(2);
+    expect(lines).toContain("failed:input-required");
+  });
+
+  it("names the flag that would have answered the question", async () => {
+    const { deps } = depsWith({ interaction: refusingInteraction() });
+    const messages: string[] = [];
+    const observing = {
+      ...deps,
+      presenter: {
+        ...deps.presenter,
+        failed: (e: TryNestError) => messages.push(e.message),
+      },
+    };
+
+    await run(
+      ["--sample", "01-cats-app", "--dir", "x"],
+      observing,
+      nonInteractive,
+    );
+
+    expect(messages.join("\n")).toMatch(/--install/);
+  });
+
+  it("accepts --yes in place of both install answers", async () => {
+    const root = await mkdtemp(join(tmpdir(), "try-nest-run-"));
+    const installed: string[] = [];
+    const { deps, lines } = depsWith({
+      interaction: refusingInteraction(),
+      runner: {
+        detect: async () => ["npm", "pnpm"],
+        install: async (directory) => void installed.push(directory),
+      },
+    });
+
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", join(root, "cats"), "--yes"],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(0);
+    expect(lines).toContain("succeeded");
+    expect(installed).toHaveLength(1);
+  });
+});
+
+describe("run enrichment lifetime", () => {
+  it("cancels description lookups once it has waited long enough", async () => {
+    const root = await mkdtemp(join(tmpdir(), "try-nest-run-"));
+    const signals: AbortSignal[] = [];
+
+    const { deps, lines } = depsWith({
+      metadata: {
+        readDescription: async (_path, signal) => {
+          if (signal !== undefined) signals.push(signal);
+          // A host that accepts the connection and never answers.
+          await new Promise(() => {});
+          return undefined;
+        },
+      },
+    });
+
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", join(root, "cats"), "--no-install"],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(0);
+    expect(lines).toContain("succeeded");
+    expect(signals.length).toBeGreaterThan(0);
+    expect(signals.every((signal) => signal.aborted)).toBe(true);
+  }, 10_000);
+});

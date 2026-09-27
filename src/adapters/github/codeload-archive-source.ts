@@ -1,4 +1,5 @@
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import { createGunzip } from "node:zlib";
 import { extract } from "tar-stream";
@@ -22,6 +23,10 @@ export function stripArchiveRoot(entryName: string): string | null {
 
   const rest = entryName.slice(prefix.length);
   return rest.length === 0 ? null : rest;
+}
+
+function describeStreamFailure(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export interface CodeloadArchiveSourceOptions {
@@ -57,6 +62,7 @@ export function createCodeloadArchiveSource(
       }
 
       const tar = extract();
+      const gunzip = createGunzip();
 
       // `lib.dom`'s ReadableStream and the one `node:stream` consumes are the
       // same object at runtime but not assignable to one another in types.
@@ -64,29 +70,67 @@ export function createCodeloadArchiveSource(
         response.body as unknown as WebReadableStream<Uint8Array>,
       );
 
-      downloaded.pipe(createGunzip()).pipe(tar);
+      // `pipeline`, unlike `.pipe`, forwards errors and destroys every stream
+      // in the chain. With `.pipe` a dropped connection or a body that is not
+      // gzip becomes an unhandled 'error' event, which kills the process with a
+      // stack trace before any of our failure handling can run.
+      let streamFailure: unknown;
+      const piping = pipeline(downloaded, gunzip, tar).catch(
+        (error: unknown) => {
+          streamFailure = error;
+        },
+      );
 
-      for await (const entry of tar) {
-        const path = stripArchiveRoot(entry.header.name);
+      try {
+        for await (const entry of tar) {
+          const path = stripArchiveRoot(entry.header.name);
 
-        if (path !== null) {
-          yield {
-            path,
-            kind:
-              entry.header.type === "file"
-                ? "file"
-                : entry.header.type === "directory"
-                  ? "directory"
-                  : "other",
-            mode: entry.header.mode,
-            // tar-stream types an entry as `AsyncIterable<unknown>`; it yields
-            // chunks of bytes.
-            body: entry as AsyncIterable<Uint8Array>,
-          };
+          if (path !== null) {
+            yield {
+              path,
+              kind:
+                entry.header.type === "file"
+                  ? "file"
+                  : entry.header.type === "directory"
+                    ? "directory"
+                    : "other",
+              mode: entry.header.mode,
+              // tar-stream types an entry as `AsyncIterable<unknown>`; it
+              // yields chunks of bytes.
+              body: entry as AsyncIterable<Uint8Array>,
+            };
+          }
+
+          // Drain whatever the consumer did not read, so the stream advances.
+          entry.resume();
         }
+      } catch (error) {
+        // A failure the domain already classified — an unsafe entry — is the
+        // consumer's, and says what it means already.
+        if (isTryNestError(error)) throw error;
 
-        // Drain whatever the consumer did not read, so the stream advances.
-        entry.resume();
+        // Anything else is the chain tearing down under us. Record it and let
+        // the translation below give the user something actionable.
+        streamFailure ??= error;
+      } finally {
+        // A consumer that stops early — an unsafe entry, a failed write, or a
+        // caller that found what it wanted — must not leave the download in
+        // flight. Destroying the head of the chain cancels the response body.
+        downloaded.destroy();
+        gunzip.destroy();
+        tar.destroy();
+        await piping;
+      }
+
+      // Reached only when the archive was read to its end. A stream failure
+      // here means we stopped early through no choice of the consumer's, so the
+      // extraction was incomplete and must not be reported as success.
+      if (streamFailure !== undefined) {
+        throw new TryNestError(
+          "archive-unavailable",
+          "The sample archive from GitHub could not be read to the end. The download may have been interrupted, or something on the network returned a response that is not an archive.",
+          { reason: describeStreamFailure(streamFailure) },
+        );
       }
     },
   };

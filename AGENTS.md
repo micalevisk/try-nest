@@ -113,3 +113,7 @@ npm run format     # biome format --write
 ## Known rough edges
 
 - `README.md` still has a TODO for a demo video.
+- **Upstream samples mostly do not `npm install` cleanly** (verified 2026-09-27):
+  they pin `typescript@5.9.3` against `@nestjs/schematics@12`'s
+  `peer typescript >=6`, so `--install` usually ends in an `ERESOLVE` warning.
+  Not ours to fix — see the C3 hazard in `docs/upstream-contract.md`.

@@ -41,9 +41,12 @@ export function rerootEntryPath(
   const relative = repoRelativePath.slice(plan.sourcePrefix.length);
   if (relative.length === 0) return null;
 
-  const segments = relative.split("/");
+  // Split on both separators. A tar header uses "/", but an entry may still
+  // carry a "\\" that means nothing on POSIX and is a directory separator on
+  // Windows — so the guard that runs first must be no laxer than the writer's.
+  const segments = relative.split(/[/\\]/);
 
-  // An empty segment means a doubled or leading slash; "." and ".." can escape.
+  // An empty segment means a doubled or leading separator; ".." can escape.
   const unsafe = segments.some(
     (segment, index) =>
       segment === ".." ||

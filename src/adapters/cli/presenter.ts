@@ -1,5 +1,6 @@
 import type { Presenter } from "../../application/ports.ts";
 import type { TryNestError } from "../../domain/errors.ts";
+import type { PackageManager } from "../../domain/package-manager.ts";
 import type { ScaffoldPlan } from "../../domain/scaffold-plan.ts";
 import {
   UPSTREAM_OWNER,
@@ -53,7 +54,12 @@ export function createPresenter(
     installing(directory: string) {
       write(`Installing dependencies in ${directory}…`);
     },
-    succeeded(plan: ScaffoldPlan, installed: boolean) {
+    succeeded(
+      plan: ScaffoldPlan,
+      installed: boolean,
+      manager?: PackageManager,
+    ) {
+      const tool = manager ?? "npm";
       const upstream = `https://github.com/${UPSTREAM_OWNER}/${UPSTREAM_REPOSITORY}/tree/${UPSTREAM_REF}/sample/${plan.sample.id}`;
 
       write("");
@@ -61,8 +67,26 @@ export function createPresenter(
       write("");
       write("Next steps:");
       write(`  cd ${plan.targetDirectory}`);
-      if (!installed) write("  npm install");
-      write("  npm run start:dev");
+
+      if (plan.sample.layout === "composite") {
+        // A composite holds no manifest of its own — that is how it is
+        // classified — so there is nothing to install or start at its root.
+        write("");
+        write(
+          `This sample is ${plan.sample.subProjects.length} projects side by side. Each runs on its own:`,
+        );
+        for (const unit of plan.sample.subProjects) {
+          write("");
+          write(`  cd ${unit}`);
+          if (!installed) write(`  ${tool} install`);
+          write(`  ${tool} run start:dev`);
+          write(`  cd ..`);
+        }
+      } else {
+        if (!installed) write(`  ${tool} install`);
+        write(`  ${tool} run start:dev`);
+      }
+
       write("");
       write(`Upstream: ${upstream}`);
     },
