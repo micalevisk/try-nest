@@ -1,0 +1,41 @@
+##
+## Upstream drift
+##
+## Upstream can break this tool with no change on our side: a renamed samples
+## directory, a listing that outgrows one request, a moved host. No offline test
+## notices that, so this one runs against the real nestjs/nest on a schedule.
+##
+## See docs/upstream-contract.md for what each assumption protects.
+##
+
+name: 'Upstream drift'
+
+on:
+  ## Allow triggering this workflow manually via GitHub CLI/web
+  workflow_dispatch:
+  schedule:
+    ## Weekly, Mondays at 06:00 UTC.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      ##########################################################################
+      ######################### Prepare the environment ########################
+      ##########################################################################
+      - name: 'Checkout the repository'
+        uses: actions/checkout@v4
+      - name: 'Use node22'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: 'npm ci --ignore-scripts'
+      ##########################################################################
+      - name: 'Check upstream assumptions'
+        run: 'npm run test:drift'

@@ -29,6 +29,7 @@
     "prestart": "npm run build",
     "start": "node ./lib/bin/try-nest.cli.js",
     "test": "vitest --config ./vitest.config.ts run",
+    "test:drift": "TRY_NEST_LIVE=1 vitest --config ./vitest.config.ts run tests/drift",
     "watch/test": "vitest --config ./vitest.config.ts watch",
     "typecheck": "vitest --typecheck",
     "lint": "biome lint --write",
