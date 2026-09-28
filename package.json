@@ -1,6 +1,6 @@
 {
   "name": "try-nest",
-  "version": "0.0.0-development.1",
+  "version": "1.0.0",
   "description": "A CLI tool to access NestJS samples easily.",
   "type": "module",
   "bin": {
