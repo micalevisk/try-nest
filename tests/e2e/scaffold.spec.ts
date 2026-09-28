@@ -10,10 +10,16 @@ import { scaffoldSample } from "../../src/application/scaffold-sample.ts";
 import type { Sample } from "../../src/domain/sample.ts";
 import { planScaffold } from "../../src/domain/scaffold-plan.ts";
 
-/** Builds a gzipped tarball shaped like GitHub's repository archive. */
+/**
+ * Builds a gzipped tarball shaped like GitHub's repository archive.
+ *
+ * `Uint8Array<ArrayBuffer>` rather than plain `Uint8Array`: the bare form widens
+ * to `ArrayBufferLike`, which `Response` refuses as a body because it might be
+ * shared memory.
+ */
 async function buildArchive(
   files: Readonly<Record<string, string>>,
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const tarball = pack();
   for (const [name, contents] of Object.entries(files)) {
     tarball.entry({ name: `nest-master/${name}` }, contents);
@@ -26,7 +32,7 @@ async function buildArchive(
   return gzipSync(Buffer.concat(chunks));
 }
 
-function archiveResponse(bytes: Uint8Array): Response {
+function archiveResponse(bytes: Uint8Array<ArrayBuffer>): Response {
   return new Response(bytes, { status: 200 });
 }
 

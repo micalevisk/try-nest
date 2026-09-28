@@ -24,10 +24,16 @@ describe("stripArchiveRoot", () => {
   });
 });
 
-/** Builds a gzipped tarball shaped like GitHub's repository archive. */
+/**
+ * Builds a gzipped tarball shaped like GitHub's repository archive.
+ *
+ * `Uint8Array<ArrayBuffer>` rather than plain `Uint8Array`: the bare form widens
+ * to `ArrayBufferLike`, which `Response` refuses as a body because it might be
+ * shared memory.
+ */
 async function gzippedArchive(
   files: Readonly<Record<string, string>>,
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const tarball = pack();
   for (const [name, contents] of Object.entries(files)) {
     tarball.entry({ name: `nest-master/${name}` }, contents);
