@@ -42,8 +42,8 @@ function asCancellation(error: unknown): unknown {
 }
 
 export function createPrompts(streams: PromptStreams = {}): Interaction {
-  const inputStream = streams.input ?? process.stdin;
-  const outputStream = streams.output ?? process.stdout;
+  const inputStream: NodeJS.ReadableStream = streams.input ?? process.stdin;
+  const outputStream: NodeJS.WritableStream = streams.output ?? process.stdout;
 
   /**
    * Binds Esc to abandoning the prompt. The keypress has to come from our own
