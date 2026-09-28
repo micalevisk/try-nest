@@ -90,8 +90,11 @@ Also note upstream samples target `@nestjs/*` v12, are `"type": "module"`, and s
 - Build is plain `tsc` (`tsconfig.build.json`, `src/` → `lib/`); no bundler. The bin entry
   is `lib/bin/try-nest.cli.js`, sources live under `src/bin/`.
 - Biome for lint + format (2-space indent, double quotes, organize-imports on).
-- Vitest: specs go in `tests/**/*.spec.ts` (currently empty except `.gitkeep`),
-  `globals: false` so import from `vitest` explicitly, `passWithNoTests: true`.
+- Vitest: specs go in `tests/**/*.spec.ts`, `globals: false` so import from `vitest`
+  explicitly, `passWithNoTests: true`. Note vitest strips types without checking them,
+  so `npm run test` passing does not mean the code compiles — that is `npm run typecheck`
+  (src + tests) and `npm run build`. `.github/workflows/test.yml` runs all three on every
+  pull request and on pushes to `main`.
 - lefthook pre-commit runs lint, format and test.
 - Releases: `semantic-release` from `main`, triggered manually via the
   `Release & publish to NPM Registry` workflow (`workflow_dispatch`). Conventional commits
