@@ -30,10 +30,10 @@ jobs:
       ##########################################################################
       - name: 'Checkout the repository'
         uses: actions/checkout@v4
-      - name: 'Use node22'
+      - name: 'Use node24'
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'npm'
       - run: 'npm ci --ignore-scripts'
       ##########################################################################
