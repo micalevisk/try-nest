@@ -35,6 +35,10 @@ separate mode.
 7. **Next steps.** How to enter the directory and start it, plus a link to the
    sample upstream.
 
+**Any question can be abandoned.** Esc, like Ctrl+C, ends the run from any
+prompt. Every question is asked before anything is written, so this is always
+true and always says so: nothing was written, and there is nothing to clean up.
+
 ### Obligations of the picker
 
 - It must render from names alone. Waiting on descriptions to draw the list would
