@@ -166,6 +166,25 @@ export async function run(
 
     assertTargetDirectoryUsable(directory, await deps.probe.inspect(directory));
 
+    // Every question is asked before the first write, so a cancelled run can
+    // always say "Nothing was written." without knowing how far it got.
+    const wantsInstall =
+      inputs.install ??
+      (inputs.yes || !env.interactive
+        ? true
+        : await deps.interaction.confirmInstall());
+
+    let manager: PackageManager | undefined;
+
+    if (wantsInstall) {
+      const available = await deps.runner.detect();
+      manager =
+        inputs.packageManager ??
+        (available.length <= 1 || inputs.yes || !env.interactive
+          ? (available[0] ?? "npm")
+          : await deps.interaction.choosePackageManager(available));
+    }
+
     const plan = planScaffold(sample, directory);
     await deps.progress.while(
       `Scaffolding ${plan.sample.id} into ${plan.targetDirectory}…`,
@@ -173,23 +192,8 @@ export async function run(
     );
 
     let installed = false;
-    let usedManager: PackageManager | undefined;
-    const wantsInstall =
-      inputs.install ??
-      (inputs.yes || !env.interactive
-        ? true
-        : await deps.interaction.confirmInstall());
 
-    if (wantsInstall) {
-      const available = await deps.runner.detect();
-      const manager =
-        inputs.packageManager ??
-        (available.length <= 1 || inputs.yes || !env.interactive
-          ? (available[0] ?? "npm")
-          : await deps.interaction.choosePackageManager(available));
-
-      usedManager = manager;
-
+    if (manager !== undefined) {
       for (const unit of plan.installUnits) {
         deps.presenter.installing(
           unit === "."
@@ -208,7 +212,7 @@ export async function run(
       }
     }
 
-    deps.presenter.succeeded(plan, installed, usedManager);
+    deps.presenter.succeeded(plan, installed, manager);
     return 0;
   } catch (error) {
     const failure = isTryNestError(error)

@@ -65,6 +65,7 @@ function depsWith(overrides: Partial<RunDependencies> = {}): {
 }
 
 const nonInteractive = { interactive: false, version: "0.0.0-test" };
+const interactive = { interactive: true, version: "0.0.0-test" };
 
 describe("run", () => {
   it("scaffolds without prompting when every input is supplied", async () => {
@@ -267,6 +268,91 @@ describe("run without a terminal", () => {
     expect(code).toBe(0);
     expect(lines).toContain("succeeded");
     expect(installed).toHaveLength(1);
+  });
+});
+
+describe("run in a terminal", () => {
+  it("asks every question before it writes anything", async () => {
+    const events: string[] = [];
+    const { deps } = depsWith({
+      interaction: {
+        chooseSample: async (samples) => {
+          events.push("chooseSample");
+          return samples[0] as never;
+        },
+        chooseTargetDirectory: async (suggested) => {
+          events.push("chooseTargetDirectory");
+          return suggested;
+        },
+        confirmInstall: async () => {
+          events.push("confirmInstall");
+          return true;
+        },
+        choosePackageManager: async () => {
+          events.push("choosePackageManager");
+          return "npm";
+        },
+      },
+      runner: { detect: async () => ["npm", "pnpm"], install: async () => {} },
+      writer: { materialize: async () => void events.push("materialize") },
+    });
+
+    const code = await run([], deps, interactive);
+
+    expect(code).toBe(0);
+    expect(events).toEqual([
+      "chooseSample",
+      "chooseTargetDirectory",
+      "confirmInstall",
+      "choosePackageManager",
+      "materialize",
+    ]);
+  });
+
+  it("writes nothing and exits 130 when a question is abandoned", async () => {
+    const writes: string[] = [];
+    const { deps, lines } = depsWith({
+      interaction: {
+        chooseSample: async (samples) => samples[0] as never,
+        chooseTargetDirectory: async (suggested) => suggested,
+        confirmInstall: async () => {
+          throw new TryNestError(
+            "cancelled",
+            "Cancelled. Nothing was written.",
+          );
+        },
+        choosePackageManager: async () => "npm",
+      },
+      writer: { materialize: async () => void writes.push("materialize") },
+    });
+
+    const code = await run([], deps, interactive);
+
+    expect(code).toBe(130);
+    expect(writes).toEqual([]);
+    expect(lines).toContain("failed:cancelled");
+  });
+
+  it("does not relabel a cancellation as a broken world", async () => {
+    const { deps, lines } = depsWith({
+      interaction: {
+        chooseSample: async () => {
+          // What createPrompts() rejects with for Ctrl+C as well as for Esc.
+          throw new TryNestError(
+            "cancelled",
+            "Cancelled. Nothing was written.",
+          );
+        },
+        chooseTargetDirectory: async (suggested) => suggested,
+        confirmInstall: async () => false,
+        choosePackageManager: async () => "npm",
+      },
+    });
+
+    const code = await run([], deps, interactive);
+
+    expect(code).toBe(130);
+    expect(lines).not.toContain("failed:catalog-unavailable");
   });
 });
 
