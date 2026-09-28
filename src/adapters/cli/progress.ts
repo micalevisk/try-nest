@@ -66,7 +66,7 @@ export function createProgress(
  */
 function clip(line: string, columns?: number): string {
   const width =
-    columns !== undefined && columns > 2 ? columns - 1 : FALLBACK_COLUMNS;
+    columns === undefined ? FALLBACK_COLUMNS : Math.max(1, columns - 1);
 
   return line.length <= width ? line : `${line.slice(0, width - 1)}…`;
 }

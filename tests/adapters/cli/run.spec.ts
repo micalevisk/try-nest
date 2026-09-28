@@ -99,6 +99,32 @@ describe("run", () => {
     ]);
   });
 
+  it("names the package-manager probe too when installing", async () => {
+    const { deps, labels } = depsWith();
+
+    const code = await run(
+      [
+        "--sample",
+        "01-cats-app",
+        "--dir",
+        "cats",
+        "--install",
+        "--package-manager",
+        "npm",
+      ],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(0);
+    expect(labels).toEqual([
+      "Fetching the available NestJS samples…",
+      "Looking up sample descriptions…",
+      "Looking for package managers…",
+      "Scaffolding 01-cats-app into cats…",
+    ]);
+  });
+
   it("lists the samples and exits", async () => {
     const { deps, lines } = depsWith();
 

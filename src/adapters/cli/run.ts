@@ -177,7 +177,10 @@ export async function run(
     let manager: PackageManager | undefined;
 
     if (wantsInstall) {
-      const available = await deps.runner.detect();
+      const available = await deps.progress.while(
+        "Looking for package managers…",
+        () => deps.runner.detect(),
+      );
       manager =
         inputs.packageManager ??
         (available.length <= 1 || inputs.yes || !env.interactive
