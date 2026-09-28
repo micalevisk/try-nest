@@ -56,8 +56,6 @@ export interface Interaction {
 }
 
 export interface Presenter {
-  starting(): void;
-  scaffolding(plan: ScaffoldPlan): void;
   installing(directory: string): void;
   /** `manager` is the one actually used, so next steps name the right tool. */
   succeeded(

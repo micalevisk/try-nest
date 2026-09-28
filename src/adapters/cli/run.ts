@@ -33,6 +33,7 @@ import {
   parseParameters,
 } from "./parameters.ts";
 import { createPresenter, exitCodeFor } from "./presenter.ts";
+import { type Progress, createProgress } from "./progress.ts";
 import { createPrompts } from "./prompts.ts";
 
 /** How long the picker will wait for descriptions before rendering without them. */
@@ -47,6 +48,7 @@ export interface RunDependencies {
   readonly runner: PackageManagerRunner;
   readonly interaction: Interaction;
   readonly presenter: Presenter;
+  readonly progress: Progress;
   readonly stdout: { write(chunk: string): void };
 }
 
@@ -66,6 +68,7 @@ export function createRunDependencies(): RunDependencies {
     runner: createPackageManagerRunner(),
     interaction: createPrompts(),
     presenter: createPresenter(),
+    progress: createProgress(),
     stdout: { write: (chunk: string) => void process.stdout.write(chunk) },
   };
 }
@@ -108,10 +111,13 @@ export async function run(
 
     if (!env.interactive) assertSufficientForNonInteractive(inputs);
 
-    // Start the catalog request before anything is drawn (ADR-0005).
+    // Start the catalog request before anything is drawn (ADR-0005); `while`
+    // takes a thunk so it adopts the promise already in flight.
     const catalogPromise = listSamples(deps.catalog);
-    deps.presenter.starting();
-    const samples = await catalogPromise;
+    const samples = await deps.progress.while(
+      "Fetching the available NestJS samples…",
+      () => catalogPromise,
+    );
 
     if (inputs.list) {
       deps.stdout.write(
@@ -127,12 +133,16 @@ export async function run(
     let enriched: readonly Sample[];
 
     try {
-      enriched = await withDeadline(
-        describeSamples(samples, deps.metadata, {
-          signal: enrichment.signal,
-        }),
-        ENRICHMENT_DEADLINE_MS,
-        samples,
+      enriched = await deps.progress.while(
+        "Looking up sample descriptions…",
+        () =>
+          withDeadline(
+            describeSamples(samples, deps.metadata, {
+              signal: enrichment.signal,
+            }),
+            ENRICHMENT_DEADLINE_MS,
+            samples,
+          ),
       );
     } finally {
       // The deadline bounds how long we wait, not how long the requests run.
@@ -157,8 +167,10 @@ export async function run(
     assertTargetDirectoryUsable(directory, await deps.probe.inspect(directory));
 
     const plan = planScaffold(sample, directory);
-    deps.presenter.scaffolding(plan);
-    await scaffoldSample(plan, deps.archive, deps.writer);
+    await deps.progress.while(
+      `Scaffolding ${plan.sample.id} into ${plan.targetDirectory}…`,
+      () => scaffoldSample(plan, deps.archive, deps.writer),
+    );
 
     let installed = false;
     let usedManager: PackageManager | undefined;

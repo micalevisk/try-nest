@@ -16,8 +16,10 @@ async function* streamOf(
 function depsWith(overrides: Partial<RunDependencies> = {}): {
   deps: RunDependencies;
   lines: string[];
+  labels: string[];
 } {
   const lines: string[] = [];
+  const labels: string[] = [];
 
   const deps: RunDependencies = {
     catalog: {
@@ -44,18 +46,22 @@ function depsWith(overrides: Partial<RunDependencies> = {}): {
       choosePackageManager: async () => "npm",
     },
     presenter: {
-      starting: () => {},
-      scaffolding: () => {},
       installing: () => {},
       succeeded: () => lines.push("succeeded"),
       warn: (message) => lines.push(`warn:${message}`),
       failed: (error) => lines.push(`failed:${error.kind}`),
     },
+    progress: {
+      while: async (label, work) => {
+        labels.push(label);
+        return work();
+      },
+    },
     stdout: { write: (chunk: string) => void lines.push(chunk.trimEnd()) },
     ...overrides,
   };
 
-  return { deps, lines };
+  return { deps, lines, labels };
 }
 
 const nonInteractive = { interactive: false, version: "0.0.0-test" };
@@ -73,6 +79,23 @@ describe("run", () => {
 
     expect(code).toBe(0);
     expect(lines).toContain("succeeded");
+  });
+
+  it("names each slow step while it waits", async () => {
+    const { deps, labels } = depsWith();
+
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", "cats", "--no-install"],
+      deps,
+      nonInteractive,
+    );
+
+    expect(code).toBe(0);
+    expect(labels).toEqual([
+      "Fetching the available NestJS samples…",
+      "Looking up sample descriptions…",
+      "Scaffolding 01-cats-app into cats…",
+    ]);
   });
 
   it("lists the samples and exits", async () => {

@@ -65,7 +65,7 @@ satisfied.
 | Workspace writer | Materialise this plan on disk. |
 | Package manager runner | Install dependencies here, using this manager. |
 | Interaction | Ask the user to choose among these options. |
-| Presenter | Report progress, results and failures. |
+| Presenter | Report results and failures. |
 
 The first three are deliberately **separate ports rather than one "GitHub" port**.
 They answer different questions, they change on different schedules, and today

@@ -49,12 +49,6 @@ export function createPresenter(
   };
 
   return {
-    starting() {
-      write("Fetching the available NestJS samples…");
-    },
-    scaffolding(plan: ScaffoldPlan) {
-      write(`Scaffolding ${plan.sample.id} into ${plan.targetDirectory}…`);
-    },
     installing(directory: string) {
       write(`Installing dependencies in ${directory}…`);
     },
