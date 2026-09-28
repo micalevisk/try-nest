@@ -50,6 +50,13 @@ true and always says so: nothing was written, and there is nothing to clean up.
 - Composite samples should be visibly distinguishable, since choosing one produces
   several projects rather than one.
 
+In a terminal, this merge is bounded rather than continuous: a `select` prompt
+cannot redraw its choices once open, so the CLI adapter waits on enrichment
+against a short deadline and renders whatever has arrived instead of
+continuing to merge afterwards ([architecture.md](./architecture.md)). The
+obligation above still holds — the picker is never blocked — only how
+descriptions catch up to it differs from the ideal.
+
 ## The scriptable path
 
 **Every prompt has a non-interactive equivalent.** When all required inputs are

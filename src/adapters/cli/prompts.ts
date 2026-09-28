@@ -51,6 +51,17 @@ export function createPrompts(streams: PromptStreams = {}): Interaction {
    * binds Esc. Two things this must not do — it never touches raw mode, which
    * inquirer owns and fighting breaks terminal teardown, and it never keeps its
    * listener past the prompt, or four sequential questions accumulate four.
+   *
+   * Calling `emitKeypressEvents` here, before inquirer builds its own
+   * `readline.Interface`, pre-empts readline's internal call to the same
+   * function: it guards on an already-installed keypress decoder and returns
+   * early, so inquirer's interface never becomes the one receiving
+   * `isCompletionEnabled`/`kSawKeyPress` or supplying `escapeCodeTimeout`.
+   * Checked on Node 26: neither `kSawKeyPress` nor `escapeCodeTimeout` is ever
+   * read on the path inquirer exercises, and `isCompletionEnabled` only gates
+   * tab completion (which needs a `completer` inquirer never passes) and a
+   * fast path in string insertion — so the only real cost is that a long
+   * pasted answer redraws per character instead of in one write.
    */
   async function escapable<T>(
     ask: (context: PromptContext) => Promise<T>,

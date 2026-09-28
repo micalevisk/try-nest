@@ -44,7 +44,8 @@ instead. A missing answer exits `2` naming the flag, rather than waiting on a
 question nobody can see.
 
 Exit codes: `0` success, `2` bad input, `130` a run you ended yourself at a
-prompt, `1` something in the world was broken.
+prompt (press Esc or Ctrl+C at any prompt to do so), `1` something in the
+world was broken.
 A failed dependency install is a warning, not a failure — the project is
 already on disk and intact.
 
