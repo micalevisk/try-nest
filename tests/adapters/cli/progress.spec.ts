@@ -28,6 +28,31 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("createProgress() defaults", () => {
+  it("writes to stderr, not stdout, when called with no arguments", async () => {
+    const originalTerm = process.env.TERM;
+    process.env.TERM = "dumb";
+    const stderrSpy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    const stdoutSpy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    try {
+      await createProgress().while("Fetching…", async () => "done");
+      // Assert before restoring: mockRestore() also clears recorded calls.
+      expect(stderrSpy).toHaveBeenCalledWith("Fetching…\n");
+      expect(stdoutSpy).not.toHaveBeenCalled();
+    } finally {
+      stderrSpy.mockRestore();
+      stdoutSpy.mockRestore();
+      if (originalTerm === undefined) delete process.env.TERM;
+      else process.env.TERM = originalTerm;
+    }
+  });
+});
+
 describe("createProgress().while without a terminal", () => {
   it("writes the label once and no escape sequence at all", async () => {
     const { stream, written } = recording();

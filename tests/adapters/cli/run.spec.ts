@@ -147,6 +147,45 @@ describe("run", () => {
     expect(lines).toContain("failed:sample-not-found");
   });
 
+  it("refuses an occupied target directory without asking the install questions", async () => {
+    const events: string[] = [];
+    const writes: string[] = [];
+    const refuse = (name: string) => async (): Promise<never> => {
+      events.push(name);
+      throw new Error(`prompted for ${name} but the directory is unusable`);
+    };
+    const { deps, lines } = depsWith({
+      probe: {
+        inspect: async () => ({
+          exists: true,
+          isDirectory: true,
+          isEmpty: false,
+        }),
+      },
+      interaction: {
+        chooseSample: refuse("chooseSample"),
+        chooseTargetDirectory: refuse("chooseTargetDirectory"),
+        confirmInstall: refuse("confirmInstall"),
+        choosePackageManager: refuse("choosePackageManager"),
+      },
+      writer: { materialize: async () => void writes.push("materialize") },
+    });
+
+    // Sample and directory come from flags, so only the install questions are
+    // still reachable via a prompt — which is exactly what must not happen
+    // once the directory is found unusable.
+    const code = await run(
+      ["--sample", "01-cats-app", "--dir", "cats"],
+      deps,
+      interactive,
+    );
+
+    expect(code).toBe(2);
+    expect(lines).toContain("failed:target-directory-unusable");
+    expect(events).toEqual([]);
+    expect(writes).toEqual([]);
+  });
+
   it("exits 2 when a required input is missing and there is no terminal", async () => {
     const { deps, lines } = depsWith();
 
