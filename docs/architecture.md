@@ -65,7 +65,7 @@ satisfied.
 | Workspace writer | Materialise this plan on disk. |
 | Package manager runner | Install dependencies here, using this manager. |
 | Interaction | Ask the user to choose among these options. |
-| Presenter | Report progress, results and failures. |
+| Presenter | Report results and failures. |
 
 The first three are deliberately **separate ports rather than one "GitHub" port**.
 They answer different questions, they change on different schedules, and today
@@ -135,7 +135,11 @@ Two pieces of work run off the critical path:
    been started earlier.
 2. **Description enrichment runs in the background** against the resolved catalog,
    with bounded concurrency, tolerating partial failure. Results merge into the
-   presented list as they arrive.
+   presented list as they arrive, where the presentation layer can accept them. A
+   terminal `select` prompt cannot redraw its choices once open, so the CLI
+   adapter instead waits on enrichment against a short deadline and renders
+   whatever has arrived. The invariant is unchanged — the picker is never blocked
+   — but the merge is bounded rather than continuous.
 
 Both are the application's concern to schedule and the adapters' concern to
 execute. The domain remains synchronous and pure.

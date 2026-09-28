@@ -35,6 +35,10 @@ separate mode.
 7. **Next steps.** How to enter the directory and start it, plus a link to the
    sample upstream.
 
+**Any question can be abandoned.** Esc, like Ctrl+C, ends the run from any
+prompt. Every question is asked before anything is written, so this is always
+true and always says so: nothing was written, and there is nothing to clean up.
+
 ### Obligations of the picker
 
 - It must render from names alone. Waiting on descriptions to draw the list would
@@ -45,6 +49,13 @@ separate mode.
   an error state.
 - Composite samples should be visibly distinguishable, since choosing one produces
   several projects rather than one.
+
+In a terminal, this merge is bounded rather than continuous: a `select` prompt
+cannot redraw its choices once open, so the CLI adapter waits on enrichment
+against a short deadline and renders whatever has arrived instead of
+continuing to merge afterwards ([architecture.md](./architecture.md)). The
+obligation above still holds — the picker is never blocked — only how
+descriptions catch up to it differs from the ideal.
 
 ## The scriptable path
 
@@ -101,9 +112,11 @@ debris, but if it does, the user must not have to guess where it is.
   stream. A script redirecting output should get data, not decoration.
 - Respect the conventional environment signals for disabling colour, and degrade
   when not attached to a terminal.
-- Exit codes distinguish success, user error (bad input, occupied directory) and
-  environmental failure (network, upstream). Scripts should be able to tell "I
-  asked for the wrong thing" from "the world was broken".
+- Exit codes distinguish success, user error (bad input, occupied directory), a
+  run the user ended themselves at a prompt, and environmental failure (network,
+  upstream). Scripts should be able to tell "I asked for the wrong thing" from
+  "the world was broken", and someone who walked away from a question is
+  neither.
 
 ## Deliberate non-features
 

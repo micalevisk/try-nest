@@ -1,6 +1,6 @@
 {
   "name": "try-nest",
-  "version": "0.0.0-development.1",
+  "version": "1.0.0",
   "description": "A CLI tool to access NestJS samples easily.",
   "type": "module",
   "bin": {
@@ -25,12 +25,13 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "tsc --project tsconfig.build.json",
-    "dev": "node --watch --experimental-transform-types --experimental-detect-module ./src/bin/try-nest.cli.ts",
+    "dev": "node --watch --experimental-strip-types ./src/bin/try-nest.cli.ts",
     "prestart": "npm run build",
     "start": "node ./lib/bin/try-nest.cli.js",
     "test": "vitest --config ./vitest.config.ts run",
+    "test:drift": "TRY_NEST_LIVE=1 vitest --config ./vitest.config.ts run tests/drift",
     "watch/test": "vitest --config ./vitest.config.ts watch",
-    "typecheck": "vitest --typecheck",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "biome lint --write",
     "format": "biome format --write"
   },
@@ -42,7 +43,7 @@
     "name": "Micael Levi L. C.",
     "url": "https://github.com/micalevisk"
   },
-  "homepage": "https://github.com/micalevisk/card",
+  "homepage": "https://github.com/micalevisk/try-nest",
   "bugs": {
     "url": "https://github.com/micalevisk/try-nest/issues"
   },
@@ -72,5 +73,9 @@
     "semantic-release": "^25.0.9",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "tar-stream": "^3.2.1"
   }
 }

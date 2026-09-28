@@ -58,3 +58,6 @@ Sessionx.vim
 
 # Shell
 .bash_history
+
+# superpowers scratch workspace (plan ledgers, briefs, review packages)
+.superpowers

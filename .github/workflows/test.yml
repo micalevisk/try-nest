@@ -1,6 +1,23 @@
+##
+## Automated tests
+##
+## Runs on every pull request, so a broken branch cannot reach `main` unnoticed,
+## and on pushes to `main` itself, which merge commits and direct pushes reach
+## without ever opening a pull request.
+##
+## `npm run typecheck` and `npm run build` are here, not just `npm run test`:
+## vitest strips types without checking them, so tests alone pass on code that
+## does not compile. Until this workflow ran them, the first and only build gate
+## was in `release.yml`, immediately before `npx semantic-release` — which made a
+## type error's one symptom a failed publish.
+##
+
 name: 'Automated Tests'
 
 on:
+  pull_request:
+  push:
+    branches: ['main']
   ## Allow triggering this workflow manually via GitHub CLI/web
   workflow_dispatch:
 
@@ -8,23 +25,27 @@ permissions:
   contents: read # for checkout
 
 jobs:
-  release:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 3
-    permissions:
-      contents: write
     steps:
       ##########################################################################
       ######################### Prepare the environment ########################
       ##########################################################################
       - name: 'Checkout the repository'
         uses: actions/checkout@v3
-      - name: 'Use node22'
+      - name: 'Use node24'
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'npm'
       - run: 'npm ci --ignore-scripts'
       ##########################################################################
+      ############################ Verify the code #############################
+      ##########################################################################
+      - name: 'Typecheck src and tests'
+        run: 'npm run typecheck'
       - name: 'Run tests'
         run: 'npm run test'
+      - name: 'Build the project'
+        run: 'npm run build'

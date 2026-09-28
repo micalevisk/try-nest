@@ -8,9 +8,9 @@ folder, so you can check one out and run it in seconds.
 
 Published to npm as `try-nest`; repo: <https://github.com/micalevisk/try-nest>.
 
-**Status: unfinished.** `src/bin/try-nest.cli.ts` is still a stub that only prints
-`Work in progress by @micalevisk`. All the scaffolding logic described below is yet to be
-written. The surrounding tooling (build, lint, test, release) is already set up and green.
+**Status: implemented.** The architecture is documented under `docs/` and the CLI
+is built against it. `src/bin/try-nest.cli.ts` is a thin entry point over the
+composition root in `src/adapters/cli/run.ts`.
 
 ## Goal
 
@@ -90,8 +90,11 @@ Also note upstream samples target `@nestjs/*` v12, are `"type": "module"`, and s
 - Build is plain `tsc` (`tsconfig.build.json`, `src/` → `lib/`); no bundler. The bin entry
   is `lib/bin/try-nest.cli.js`, sources live under `src/bin/`.
 - Biome for lint + format (2-space indent, double quotes, organize-imports on).
-- Vitest: specs go in `tests/**/*.spec.ts` (currently empty except `.gitkeep`),
-  `globals: false` so import from `vitest` explicitly, `passWithNoTests: true`.
+- Vitest: specs go in `tests/**/*.spec.ts`, `globals: false` so import from `vitest`
+  explicitly, `passWithNoTests: true`. Note vitest strips types without checking them,
+  so `npm run test` passing does not mean the code compiles — that is `npm run typecheck`
+  (src + tests) and `npm run build`. `.github/workflows/test.yml` runs all three on every
+  pull request and on pushes to `main`.
 - lefthook pre-commit runs lint, format and test.
 - Releases: `semantic-release` from `main`, triggered manually via the
   `Release & publish to NPM Registry` workflow (`workflow_dispatch`). Conventional commits
@@ -100,19 +103,20 @@ Also note upstream samples target `@nestjs/*` v12, are `"type": "module"`, and s
 ## Commands
 
 ```sh
-npm run dev        # node --watch on src/bin/try-nest.cli.ts (native TS via --experimental-transform-types)
+npm run dev        # node --watch on src/bin/try-nest.cli.ts (native TS via --experimental-strip-types)
 npm run build      # tsc -p tsconfig.build.json -> ./lib
 npm start          # build, then run ./lib/bin/try-nest.cli.js
-npm test           # vitest run
-npm run typecheck  # vitest --typecheck
+npm test           # vitest run (offline; the drift sentinel is skipped)
+npm run test:drift # live check of the upstream assumptions (network)
+npm run typecheck  # tsc --noEmit -p tsconfig.json (src + tests)
 npm run lint       # biome lint --write
 npm run format     # biome format --write
 ```
 
 ## Known rough edges
 
-- `package.json` `homepage` still points at `https://github.com/micalevisk/card`
-  (copy-paste leftover from another project).
-- `tsconfig.build.json` excludes `test`/`**/*spec.ts` but this repo's test dir is `tests/`.
-- `README.md` promises "a set of interactive options _(detailed below)_" that are not
-  documented yet, and has a TODO for a demo video.
+- `README.md` still has a TODO for a demo video.
+- **Upstream samples mostly do not `npm install` cleanly** (verified 2026-09-27):
+  they pin `typescript@5.9.3` against `@nestjs/schematics@12`'s
+  `peer typescript >=6`, so `--install` usually ends in an `ERESOLVE` warning.
+  Not ours to fix — see the C3 hazard in `docs/upstream-contract.md`.

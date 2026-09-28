@@ -88,6 +88,28 @@ installs and then fails — and it fails on the user's machine, not in our CI.
 There is no way to prevent this. The only defence is to detect it: see
 [testing-strategy.md](./testing-strategy.md) on the drift sentinel.
 
+### Samples that do not install (C3) — observed, not hypothetical
+
+Verified 2026-09-27 against `master`: most samples pin `typescript@5.9.3` as a dev
+dependency while their `@nestjs/schematics@12.0.5` declares `peer typescript
+>=6.0.0`. A plain `npm install` in a freshly scaffolded sample therefore fails
+with `ERESOLVE`, and npm suggests `--legacy-peer-deps`. Spot-checked five samples:
+four conflict, `35-zod-validation` (which pins `typescript@6.0.3`) does not.
+
+This is upstream's defect and nothing this tool can fix — rewriting a sample's
+manifest during extraction would break the standalone-output invariant's whole
+point, which is that the user gets upstream's project and not our edit of it.
+
+What matters is that it degrades the way it should: the scaffold succeeds, the
+install failure is reported as a warning naming the directory, the project is left
+intact on disk, and the run exits 0. npm's own `--legacy-peer-deps` advice reaches
+the user directly, because installs inherit stdio.
+
+Deliberately **not** added to the drift sentinel. A scheduled check that is born
+red for a reason outside this repository trains people to ignore the job, which
+costs more than the signal is worth. If upstream fixes this and it later regresses,
+that is the moment a check would earn its place.
+
 ### Moving default branch (A5)
 
 Scaffolding from the default branch means users get whatever is on it, including
