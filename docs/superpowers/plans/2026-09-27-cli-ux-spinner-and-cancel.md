@@ -1450,11 +1450,12 @@ was already on disk. Telling someone their work is gone when it is intact is
 the failure cli-ux.md already names.
 
 With all four questions ahead of the first write, cancellation needs no
-stage-awareness. Two consequences beyond the message: an unusable target
-directory is now rejected before the install questions rather than after, which
-is fail-fast and strictly better, and the chosen manager is known before the
-scaffold, so nothing about the final instructions changes. `detect()` still
-runs only when an install is actually wanted.
+stage-awareness. The chosen manager is known before the scaffold, so nothing
+about the final instructions changes, and `detect()` still runs only when an
+install is actually wanted.
+
+Note: `assertTargetDirectoryUsable` already ran before the install questions, so
+do not claim the reorder moved it. What moves is the write.
 
 Claude-Session: https://claude.ai/code/session_019g6UcJUKkQUZh8fnLrm6yH
 Co-Authored-By: Claude Code (claude-opus-5) <noreply@anthropic.com>

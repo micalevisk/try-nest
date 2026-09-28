@@ -138,10 +138,13 @@ installing() lines + installDependencies
 succeeded
 ```
 
-Three consequences: an unusable target directory now fails *before* the install questions
-rather than after, which is fail-fast and strictly better; `usedManager` is known before the
-scaffold, so nothing about `succeeded` changes; and `detect()` still runs only when an
-install is actually wanted.
+Three consequences: nothing is written until every question has been answered, which is
+the whole point; `usedManager` is known before the scaffold, so nothing about `succeeded`
+changes; and `detect()` still runs only when an install is actually wanted.
+
+One thing that does **not** change, recorded because an earlier draft of this section
+claimed otherwise: `assertTargetDirectoryUsable` already ran before the install questions.
+What moves is the write, not that check.
 
 ### D5 — One new failure kind, exit code 130
 
