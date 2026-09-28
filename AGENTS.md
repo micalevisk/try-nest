@@ -105,7 +105,7 @@ npm run build      # tsc -p tsconfig.build.json -> ./lib
 npm start          # build, then run ./lib/bin/try-nest.cli.js
 npm test           # vitest run (offline; the drift sentinel is skipped)
 npm run test:drift # live check of the upstream assumptions (network)
-npm run typecheck  # vitest --typecheck
+npm run typecheck  # tsc --noEmit -p tsconfig.build.json
 npm run lint       # biome lint --write
 npm run format     # biome format --write
 ```

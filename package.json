@@ -31,7 +31,7 @@
     "test": "vitest --config ./vitest.config.ts run",
     "test:drift": "TRY_NEST_LIVE=1 vitest --config ./vitest.config.ts run tests/drift",
     "watch/test": "vitest --config ./vitest.config.ts watch",
-    "typecheck": "vitest --typecheck",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "lint": "biome lint --write",
     "format": "biome format --write"
   },
