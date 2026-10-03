@@ -36,8 +36,26 @@ import { createPresenter, exitCodeFor } from "./presenter.ts";
 import { type Progress, createProgress } from "./progress.ts";
 import { createPrompts } from "./prompts.ts";
 
-/** How long the picker will wait for descriptions before rendering without them. */
-const ENRICHMENT_DEADLINE_MS = 1_500;
+/**
+ * How long the picker will wait for descriptions before rendering with
+ * whatever has arrived.
+ *
+ * Derived from the work, not picked: today's upstream is 41 manifests (35
+ * single samples, plus three each for the two composites) and
+ * `describeSamples` defaults to 8 in flight, so a run is `ceil(41 / 8) = 6`
+ * sequential waves. At 2000 ms that allows roughly 330 ms per wave — about one
+ * round trip to `raw.githubusercontent.com` on an ordinary connection — so a
+ * healthy run finishes inside the deadline and only a slow one is cut short.
+ *
+ * **Revisit this whenever the request count or the concurrency changes.** Six
+ * waves is what the number is sized for; adding a manifest per sample would
+ * make it twelve and halve the time each one gets.
+ *
+ * Overrunning it is not a failure. The deadline bounds how long the user
+ * waits, never how much of the answer survives: `onPartial` below keeps every
+ * description that landed in time.
+ */
+const ENRICHMENT_DEADLINE_MS = 2_000;
 
 export interface RunDependencies {
   readonly catalog: SampleCatalogSource;
@@ -73,15 +91,23 @@ export function createRunDependencies(): RunDependencies {
   };
 }
 
+/**
+ * Awaits `work`, but gives up after `milliseconds` and takes whatever
+ * `fallback` says is available at that moment.
+ *
+ * `fallback` is a thunk rather than a value precisely so the deadline bounds
+ * the wait and not the result: it is read when the timer fires, so it can
+ * return work that completed while we were waiting.
+ */
 async function withDeadline<T>(
   work: Promise<T>,
   milliseconds: number,
-  fallback: T,
+  fallback: () => T,
 ): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
 
   const deadline = new Promise<T>((resolvePromise) => {
-    timer = setTimeout(() => resolvePromise(fallback), milliseconds);
+    timer = setTimeout(() => resolvePromise(fallback()), milliseconds);
   });
 
   try {
@@ -132,6 +158,10 @@ export async function run(
     const enrichment = new AbortController();
     let enriched: readonly Sample[];
 
+    // The best catalog enrichment has published so far. Starts as the bare one
+    // so a deadline that fires before any answer still has something to render.
+    let soFar: readonly Sample[] = samples;
+
     try {
       enriched = await deps.progress.while(
         "Looking up sample descriptions…",
@@ -139,9 +169,14 @@ export async function run(
           withDeadline(
             describeSamples(samples, deps.metadata, {
               signal: enrichment.signal,
+              onPartial: (partial) => {
+                soFar = partial;
+              },
             }),
             ENRICHMENT_DEADLINE_MS,
-            samples,
+            // Not `samples`: the deadline is a limit on waiting, not a reason
+            // to throw away the descriptions that already arrived.
+            () => soFar,
           ),
       );
     } finally {

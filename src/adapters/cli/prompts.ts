@@ -4,6 +4,7 @@ import type { Interaction } from "../../application/ports.ts";
 import { TryNestError } from "../../domain/errors.ts";
 import type { PackageManager } from "../../domain/package-manager.ts";
 import type { Sample } from "../../domain/sample.ts";
+import { FALLBACK_COLUMNS, type ProgressStream } from "./progress.ts";
 
 /**
  * What `@inquirer/prompts` accepts as a prompt's second argument. Declared here
@@ -18,7 +19,7 @@ interface PromptContext {
 
 export interface PromptStreams {
   readonly input?: NodeJS.ReadableStream;
-  readonly output?: NodeJS.WritableStream;
+  readonly output?: ProgressStream;
 }
 
 /**
@@ -41,9 +42,109 @@ function asCancellation(error: unknown): unknown {
     : error;
 }
 
+/**
+ * How wide the id column is allowed to get. The widest id upstream is
+ * `32-graphql-federation-schema-first` at 34 characters; aligning every row to
+ * it would spend most of an 80-column line on whitespace to accommodate two
+ * outliers. Beyond the cap a row takes a single space instead.
+ */
+const ID_COLUMN_CAP = 24;
+/** Between the id column and the description, when the id fits the column. */
+const COLUMN_GAP = "  ";
+/** Inquirer draws a two-column pointer gutter to the left of every choice. */
+const POINTER_COLUMNS = 2;
+/** Narrower than this and a description is noise; the row renders bare. */
+const MINIMUM_DESCRIPTION_COLUMNS = 20;
+
+export interface SampleChoice {
+  readonly name: string;
+  readonly value: Sample;
+  /** Untruncated. Inquirer renders it as a footer for the highlighted row. */
+  readonly description?: string;
+}
+
+/** Composites must stay visibly distinguishable even with no description (cli-ux.md). */
+function labelFor(sample: Sample): string {
+  return sample.layout === "composite"
+    ? `${sample.displayName}  (${sample.subProjects.length} projects)`
+    : sample.displayName;
+}
+
+/**
+ * One line of printable text, whatever the source put in it. A newline in a
+ * choice corrupts inquirer's redraw for the rest of the prompt.
+ *
+ * Control and format characters go too, not just whitespace: `\s` matches
+ * neither `\x1b` nor `\x07`, and a manifest description is free text off the
+ * network, so an escape sequence left in would now be drawn into *every*
+ * visible row rather than one footer.
+ *
+ * Width is still counted in UTF-16 code units, the same convention
+ * `progress.ts` uses. Grapheme-aware counting here and code units there would
+ * be worse than one convention applied consistently.
+ */
+function oneLine(text: string): string {
+  return text.replace(/[\p{Cc}\p{Cf}\s]+/gu, " ").trim();
+}
+
+function truncate(text: string, width: number): string {
+  return text.length <= width ? text : `${text.slice(0, width - 1)}…`;
+}
+
+/**
+ * The picker's rows: id, padding, truncated description.
+ *
+ * Inquirer renders `description` as a footer for the highlighted row only, so
+ * without this only one row is ever annotated — the inline copy is what lets a
+ * user compare before choosing (ADR-0006). Truncation costs no information:
+ * the full text still reaches the footer.
+ *
+ * Identity is never truncated. An id wider than the terminal overflows, exactly
+ * as it does today.
+ */
+export function sampleChoices(
+  samples: readonly Sample[],
+  columns?: number,
+): readonly SampleChoice[] {
+  // Leave the last column alone, as the spinner does: a line ending exactly at
+  // the edge wraps on some terminals.
+  const width =
+    columns === undefined ? FALLBACK_COLUMNS : Math.max(1, columns - 1);
+  const widestId = samples.reduce(
+    (widest, sample) => Math.max(widest, sample.displayName.length),
+    0,
+  );
+  const idColumn = Math.min(widestId, ID_COLUMN_CAP);
+
+  return samples.map((sample) => {
+    const label = labelFor(sample);
+    const choice = { value: sample };
+
+    if (sample.description === undefined) return { ...choice, name: label };
+
+    const description = oneLine(sample.description);
+    // A label that overruns the column takes a single space rather than
+    // pushing every other row across to meet it.
+    const prefix =
+      label.length <= idColumn
+        ? `${label.padEnd(idColumn)}${COLUMN_GAP}`
+        : `${label} `;
+    const available = width - prefix.length - POINTER_COLUMNS;
+
+    return {
+      ...choice,
+      description,
+      name:
+        available < MINIMUM_DESCRIPTION_COLUMNS
+          ? label
+          : `${prefix}${truncate(description, available)}`,
+    };
+  });
+}
+
 export function createPrompts(streams: PromptStreams = {}): Interaction {
   const inputStream: NodeJS.ReadableStream = streams.input ?? process.stdin;
-  const outputStream: NodeJS.WritableStream = streams.output ?? process.stdout;
+  const outputStream: ProgressStream = streams.output ?? process.stdout;
 
   /**
    * Binds Esc to abandoning the prompt. The keypress has to come from our own
@@ -94,16 +195,7 @@ export function createPrompts(streams: PromptStreams = {}): Interaction {
           {
             message: "Which sample would you like to try?",
             pageSize: 15,
-            choices: samples.map((sample) => ({
-              name:
-                sample.layout === "composite"
-                  ? `${sample.displayName}  (${sample.subProjects.length} projects)`
-                  : sample.displayName,
-              value: sample,
-              ...(sample.description === undefined
-                ? {}
-                : { description: sample.description }),
-            })),
+            choices: sampleChoices(samples, outputStream.columns),
           },
           context,
         ),

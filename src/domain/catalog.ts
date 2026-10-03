@@ -63,16 +63,21 @@ export function buildCatalog(paths: readonly string[]): readonly Sample[] {
 }
 
 /**
- * Where a sample's description is read from. A composite has no manifest of
- * its own, so its first sub-project stands in for it.
+ * Every manifest that describes this sample.
+ *
+ * A single sample owns one. A composite owns none of its own, so it answers
+ * with its sub-projects' — all of them, because no one of them speaks for the
+ * whole sample (ADR-0009).
  */
-export function manifestPathFor(sample: Sample): string {
-  const suffix =
-    sample.layout === "composite" && sample.subProjects[0] !== undefined
-      ? `/${sample.subProjects[0]}`
-      : "";
+export function manifestPathsFor(sample: Sample): readonly string[] {
+  if (sample.layout !== "composite") {
+    return [`${SAMPLES_ROOT}/${sample.id}/${MANIFEST_FILENAME}`];
+  }
 
-  return `${SAMPLES_ROOT}/${sample.id}${suffix}/${MANIFEST_FILENAME}`;
+  return sample.subProjects.map(
+    (subProject) =>
+      `${SAMPLES_ROOT}/${sample.id}/${subProject}/${MANIFEST_FILENAME}`,
+  );
 }
 
 export function findSample(samples: readonly Sample[], id: string): Sample {

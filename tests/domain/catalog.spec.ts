@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCatalog } from "../../src/domain/catalog.ts";
+import { buildCatalog, manifestPathsFor } from "../../src/domain/catalog.ts";
 
 describe("buildCatalog", () => {
   it("treats a directory with its own manifest as a single sample", () => {
@@ -71,5 +71,47 @@ describe("buildCatalog", () => {
       "02-gateways",
       "10-fastify",
     ]);
+  });
+});
+
+describe("manifestPathsFor", () => {
+  it("gives a single sample the one manifest it owns", () => {
+    expect(
+      manifestPathsFor({
+        id: "01-cats-app",
+        displayName: "01-cats-app",
+        layout: "single",
+        subProjects: [],
+      }),
+    ).toEqual(["sample/01-cats-app/package.json"]);
+  });
+
+  it("gives a composite one manifest per sub-project, in order", () => {
+    expect(
+      manifestPathsFor({
+        id: "31-graphql-federation-code-first",
+        displayName: "31-graphql-federation-code-first",
+        layout: "composite",
+        subProjects: ["gateway", "posts-application", "users-application"],
+      }),
+    ).toEqual([
+      "sample/31-graphql-federation-code-first/gateway/package.json",
+      "sample/31-graphql-federation-code-first/posts-application/package.json",
+      "sample/31-graphql-federation-code-first/users-application/package.json",
+    ]);
+  });
+
+  // Unreachable through buildCatalog, which only calls a directory composite
+  // when its children carry manifests. Asserted so the shape stays an empty
+  // list rather than a malformed "sample/x//package.json".
+  it("gives a composite with no sub-projects nothing to read", () => {
+    expect(
+      manifestPathsFor({
+        id: "weird",
+        displayName: "weird",
+        layout: "composite",
+        subProjects: [],
+      }),
+    ).toEqual([]);
   });
 });
