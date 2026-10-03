@@ -63,19 +63,6 @@ export function buildCatalog(paths: readonly string[]): readonly Sample[] {
 }
 
 /**
- * Where a sample's description is read from. A composite has no manifest of
- * its own, so its first sub-project stands in for it.
- */
-export function manifestPathFor(sample: Sample): string {
-  const suffix =
-    sample.layout === "composite" && sample.subProjects[0] !== undefined
-      ? `/${sample.subProjects[0]}`
-      : "";
-
-  return `${SAMPLES_ROOT}/${sample.id}${suffix}/${MANIFEST_FILENAME}`;
-}
-
-/**
  * Every manifest that describes this sample.
  *
  * A single sample owns one. A composite owns none of its own, so it answers

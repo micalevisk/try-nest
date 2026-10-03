@@ -71,8 +71,17 @@ describe("describeSamples", () => {
 
     expect(peak).toBeLessThanOrEqual(2);
   });
+});
 
-  it("reads a composite's description from its first sub-project", async () => {
+const composite: Sample = {
+  id: "31-federation",
+  displayName: "31-federation",
+  layout: "composite",
+  subProjects: ["gateway", "posts-application", "users-application"],
+};
+
+describe("describeSamples, for a composite sample", () => {
+  it("reads every sub-project's manifest, not just the first", async () => {
     const seen: string[] = [];
     const source: SampleMetadataSource = {
       readDescription: async (path) => {
@@ -81,18 +90,104 @@ describe("describeSamples", () => {
       },
     };
 
-    await describeSamples(
-      [
-        {
-          id: "31-federation",
-          displayName: "31-federation",
-          layout: "composite",
-          subProjects: ["gateway", "posts-application"],
-        },
-      ],
+    await describeSamples([composite], source);
+
+    expect(seen.sort()).toEqual([
+      "sample/31-federation/gateway/package.json",
+      "sample/31-federation/posts-application/package.json",
+      "sample/31-federation/users-application/package.json",
+    ]);
+  });
+
+  it("describes itself with the phrase its sub-projects share", async () => {
+    const descriptions: Record<string, string> = {
+      gateway: "Code-first Apollo Federation gateway over users and posts",
+      "posts-application": "Code-first Apollo Federation subgraph for posts",
+      "users-application": "Code-first Apollo Federation subgraph for users",
+    };
+    const source: SampleMetadataSource = {
+      readDescription: async (path) => descriptions[path.split("/")[2] ?? ""],
+    };
+
+    const [result] = await describeSamples([composite], source);
+
+    expect(result?.description).toBe("Code-first Apollo Federation");
+  });
+
+  it("still derives a description when one sub-project fails", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async (path) => {
+        if (path.includes("users-application")) throw new Error("404");
+        return path.includes("gateway")
+          ? "Schema-first Apollo Federation gateway"
+          : "Schema-first Apollo Federation subgraph";
+      },
+    };
+
+    const [result] = await describeSamples([composite], source);
+
+    expect(result?.description).toBe("Schema-first Apollo Federation");
+  });
+
+  // Review Focus 3. One sub-project speaking for the whole sample is exactly
+  // the defect this change removes, so one answer is not enough.
+  it("has no description when only one sub-project answers", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async (path) =>
+        path.includes("gateway") ? "Apollo Federation gateway" : undefined,
+    };
+
+    const [result] = await describeSamples([composite], source);
+
+    expect(result?.description).toBeUndefined();
+  });
+
+  it("has no description when every sub-project fails", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async () => {
+        throw new Error("network down");
+      },
+    };
+
+    const result = await describeSamples([composite], source);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.description).toBeUndefined();
+  });
+
+  it("has no description when it has no sub-projects to read", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async () => "never asked for",
+    };
+
+    const [result] = await describeSamples(
+      [{ ...composite, subProjects: [] }],
       source,
     );
 
-    expect(seen).toEqual(["sample/31-federation/gateway/package.json"]);
+    expect(result?.description).toBeUndefined();
+  });
+});
+
+// Review Focus 1, end to end. While nestjs/nest#18009 is unmerged every
+// manifest carries the same boilerplate; the composite must come out of
+// combining with that same string, so suppression counts it with the singles
+// and the picker looks exactly as it does today.
+describe("describeSamples, before upstream descriptions become meaningful", () => {
+  it("suppresses the boilerplate on the composite as well as the singles", async () => {
+    const boilerplate = "Nest TypeScript starter repository";
+    const source: SampleMetadataSource = {
+      readDescription: async () => boilerplate,
+    };
+
+    const result = await describeSamples([...samples, composite], source);
+
+    expect(result.map((s) => s.description)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
   });
 });
