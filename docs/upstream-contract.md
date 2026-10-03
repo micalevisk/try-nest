@@ -127,10 +127,13 @@ A composite has no manifest of its own, so it is described by the leading phrase
 its sub-projects share ([ADR-0009](./adr/0009-derived-composite-descriptions.md)).
 Nothing upstream obliges them to share one, and nothing here asks them to.
 
-C4 describes a state that does not exist yet: it is recorded from
+C4 holds trivially today: the three sub-projects of the code-first composite all
+carry the same boilerplate, which the picker suppresses along with 33 of the 35
+single-project samples. The schema-first composite's sub-projects carry empty
+descriptions, so it has no description at all and nothing is derived for it. What
+does not exist yet is a *meaningful* shared prefix. That is recorded from
 [`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009), which is still
-open, and is not verified against a merged `master`. Today every sub-project
-shares the same boilerplate, which the picker suppresses.
+open, and is not verified against a merged `master`.
 
 Usually when this breaks the composite has no description and every other sample
 is untouched. It is recorded because the failure is silent, and because someone
@@ -141,9 +144,9 @@ There is one case where it does not degrade cleanly. The shared phrase is trimme
 of trailing punctuation, so a composite's derived description is returned
 byte-for-byte only when the shared phrase ends in a letter or digit. Today's
 boilerplate ("Nest TypeScript starter repository") does. If upstream's shared
-string ever gained a trailing period, the composite would carry a variant the 35
-single-project samples do not, its repeat count would fall below the threshold of
-three that cross-sample suppression requires, and the composite would become the
+string ever gained a trailing period, the code-first composite's derived
+description would differ from the 33 single-project samples' and so would repeat
+fewer than the three times cross-sample suppression requires. It would become the
 one row still showing boilerplate while every other row was suppressed.
 
 ## What we deliberately do not assume

@@ -47,7 +47,7 @@ words; the shared phrase stops before them.
   one exception is recorded under C4 in
   [upstream-contract.md](../upstream-contract.md).
 - It is a true statement about the sample whenever it says anything at all,
-  because every sub-project's description begins with it.
+  because every description that arrived begins with it.
 
 **Bad:**
 
@@ -60,6 +60,12 @@ words; the shared phrase stops before them.
   obliges them to.
 - A composite costs one request per sub-project rather than one, taking today's
   run from 37 requests to 41.
+- A composite that suffered a partial failure can be described by a phrase its
+  missing sub-project does not share, and nothing tells the user that happened.
+- Trailing punctuation is trimmed from the shared phrase, so the derived text is
+  not always what the sub-projects wrote byte-for-byte. Where it differs from the
+  single-project samples' text it can slip past cross-sample suppression; see C4
+  in [upstream-contract.md](../upstream-contract.md).
 
 **Obligations this creates:** the two-input floor means partial failure must stay
 survivable rather than becoming all-or-nothing, and the combine step must run
