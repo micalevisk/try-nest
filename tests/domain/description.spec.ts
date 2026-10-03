@@ -129,6 +129,15 @@ describe("sharedDescriptionPrefix", () => {
     ).toBe(boilerplate);
   });
 
+  it("keeps a closing bracket, trimming only sentence punctuation", () => {
+    expect(
+      sharedDescriptionPrefix([
+        "GraphQL (beta) gateway",
+        "GraphQL (beta) subgraph",
+      ]),
+    ).toBe("GraphQL (beta)");
+  });
+
   it("ignores surrounding and repeated whitespace", () => {
     expect(
       sharedDescriptionPrefix([

@@ -71,11 +71,20 @@ function labelFor(sample: Sample): string {
 }
 
 /**
- * One line, whatever the source did with whitespace. A newline in a choice
- * corrupts inquirer's redraw for the rest of the prompt.
+ * One line of printable text, whatever the source put in it. A newline in a
+ * choice corrupts inquirer's redraw for the rest of the prompt.
+ *
+ * Control and format characters go too, not just whitespace: `\s` matches
+ * neither `\x1b` nor `\x07`, and a manifest description is free text off the
+ * network, so an escape sequence left in would now be drawn into *every*
+ * visible row rather than one footer.
+ *
+ * Width is still counted in UTF-16 code units, the same convention
+ * `progress.ts` uses. Grapheme-aware counting here and code units there would
+ * be worse than one convention applied consistently.
  */
 function oneLine(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
+  return text.replace(/[\p{Cc}\p{Cf}\s]+/gu, " ").trim();
 }
 
 function truncate(text: string, width: number): string {

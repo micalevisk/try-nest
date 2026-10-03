@@ -49,7 +49,7 @@ export function withoutUninformativeDescriptions(
 }
 
 /**
- * Words that may legitimately end a sentence nowhere, so a prefix ending on one
+ * Words that cannot end a phrase on their own, so a prefix stopping on one
  * reads as a cut-off clause rather than a statement. Typography, not content:
  * this list decides where a true phrase stops, never what it says.
  */
@@ -101,14 +101,20 @@ export function sharedDescriptionPrefix(
     shared.push(word);
   }
 
-  // Walk back off anything that cannot end a phrase. A word that is pure
-  // punctuation disappears entirely and the one before it is judged in turn.
+  // Walk back off anything that cannot end a phrase. A word left with no
+  // letter or digit at all disappears entirely and the one before it is judged
+  // in turn.
+  //
+  // Only sentence punctuation is trimmed, not every non-alphanumeric: a
+  // broader class unbalances bracketed and quoted tokens, turning the shared
+  // prefix of "GraphQL (beta) gateway" and "GraphQL (beta) subgraph" into
+  // "GraphQL (beta".
   while (shared.length > 0) {
     const last = shared.at(-1) as string;
-    const trimmed = last.replace(/[^\p{L}\p{N}]+$/u, "");
+    const trimmed = last.replace(/[.,;:!?]+$/u, "");
 
     if (
-      trimmed.length === 0 ||
+      !/[\p{L}\p{N}]/u.test(trimmed) ||
       DANGLING_CONNECTIVES.has(trimmed.toLowerCase())
     ) {
       shared.pop();

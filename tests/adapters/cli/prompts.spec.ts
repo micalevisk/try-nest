@@ -34,10 +34,11 @@ const samples: readonly Sample[] = [
   },
 ];
 
-function terminal(): {
+function terminal(columns = 80): {
   prompts: Interaction;
   input: PassThrough;
   press: (keys: string, afterMs?: number) => void;
+  rendered: () => string;
 } {
   const input = new PassThrough();
   const output = new PassThrough();
@@ -45,7 +46,10 @@ function terminal(): {
   // A PassThrough is neither a TTY nor raw-mode capable; inquirer's readline
   // requires both to render at all.
   Object.assign(input, { isTTY: true, setRawMode: () => input });
-  Object.assign(output, { isTTY: true, columns: 80, rows: 24 });
+  Object.assign(output, { isTTY: true, columns, rows: 24 });
+
+  const drawn: string[] = [];
+  output.on("data", (chunk: Buffer | string) => void drawn.push(String(chunk)));
   output.resume();
 
   return {
@@ -54,6 +58,7 @@ function terminal(): {
     press: (keys: string, afterMs = 40) => {
       setTimeout(() => void input.write(keys), afterMs);
     },
+    rendered: () => drawn.join(""),
   };
 }
 
@@ -129,6 +134,28 @@ describe("createPrompts() with an answer", () => {
     press(ENTER, 120);
 
     expect(await prompts.chooseTargetDirectory("cats")).toBe("my-app");
+  });
+
+  // The wiring, not the layout: sampleChoices is unit-tested at several
+  // widths above, but only chooseSample knows where the width comes from. If
+  // it stopped passing the stream's columns the picker would silently assume
+  // 80 again and mangle exactly the narrow terminal that fallback exists for.
+  it("sizes the rows from the output stream's columns, not a fixed 80", async () => {
+    // Short enough that the row cannot wrap at either width, so the only way
+    // it can go missing from the narrow render is the width being honoured.
+    const annotated = [single("01-cats-app", "Cats")];
+    const inline = "01-cats-app  Cats";
+
+    const wide = terminal(80);
+    wide.press(ENTER);
+    await wide.prompts.chooseSample(annotated);
+
+    const narrow = terminal(30);
+    narrow.press(ENTER);
+    await narrow.prompts.chooseSample(annotated);
+
+    expect(wide.rendered()).toContain(inline);
+    expect(narrow.rendered()).not.toContain(inline);
   });
 
   it(
@@ -251,7 +278,8 @@ describe("sampleChoices", () => {
     ]);
   });
 
-  // Review Focus 4.
+  // Identity is never truncated, so an id wider than the whole terminal is
+  // rendered in full and the arithmetic around it must not underflow.
   it("renders a terminal narrower than the id without wrapping or throwing", () => {
     const [choice] = sampleChoices(
       [single("32-graphql-federation-schema-first", "Federation")],
@@ -282,7 +310,21 @@ describe("sampleChoices", () => {
     expect(choice?.description).toBe("A REST API over cats");
   });
 
-  // Review Focus 5.
+  // A manifest description is free text fetched from the network, and an
+  // escape byte is not whitespace, so collapsing /\s+/ alone would write it
+  // into every visible row rather than only the highlighted row's footer.
+  it("strips control characters so an escape sequence cannot reach a row", () => {
+    const [choice] = sampleChoices(
+      [single("01-cats-app", "A \u001b[31mREST\u001b[0m API\u0007 over cats")],
+      80,
+    );
+
+    expect(choice?.name).not.toContain("\u001b");
+    expect(choice?.name).not.toContain("\u0007");
+  });
+
+  // An empty catalog reaches the picker whenever upstream answers with a tree
+  // this tool recognises nothing in; mapping over it must not invent a row.
   it("renders an empty catalog as no choices", () => {
     expect(sampleChoices([], 80)).toEqual([]);
   });
