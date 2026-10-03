@@ -99,7 +99,7 @@ describe("describeSamples, for a composite sample", () => {
     ]);
   });
 
-  it("describes itself with the phrase its sub-projects share", async () => {
+  it("borrows its first sub-project's description, verbatim", async () => {
     const descriptions: Record<string, string> = {
       gateway: "Code-first Apollo Federation gateway over users and posts",
       "posts-application": "Code-first Apollo Federation subgraph for posts",
@@ -111,35 +111,53 @@ describe("describeSamples, for a composite sample", () => {
 
     const [result] = await describeSamples([composite], source);
 
-    expect(result?.description).toBe("Code-first Apollo Federation");
+    expect(result?.description).toBe(
+      "Code-first Apollo Federation gateway over users and posts",
+    );
   });
 
-  it("still derives a description when one sub-project fails", async () => {
+  it("falls back to the next sub-project when the first one fails", async () => {
     const source: SampleMetadataSource = {
       readDescription: async (path) => {
-        if (path.includes("users-application")) throw new Error("404");
-        return path.includes("gateway")
-          ? "Schema-first Apollo Federation gateway"
-          : "Schema-first Apollo Federation subgraph";
+        if (path.includes("gateway")) throw new Error("404");
+        return "Schema-first Apollo Federation subgraph";
       },
     };
 
     const [result] = await describeSamples([composite], source);
 
-    expect(result?.description).toBe("Schema-first Apollo Federation");
+    expect(result?.description).toBe("Schema-first Apollo Federation subgraph");
   });
 
-  // Review Focus 3. One sub-project speaking for the whole sample is exactly
-  // the defect this change removes, so one answer is not enough.
-  it("has no description when only one sub-project answers", async () => {
+  // Lookup order, not arrival order: whichever request wins the race, the
+  // gateway's description is the one shown whenever it arrived at all.
+  it("prefers the first sub-project even when a later one answers first", async () => {
     const source: SampleMetadataSource = {
-      readDescription: async (path) =>
-        path.includes("gateway") ? "Apollo Federation gateway" : undefined,
+      readDescription: async (path) => {
+        if (path.includes("gateway")) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return "Apollo Federation gateway";
+        }
+        return "Apollo Federation subgraph";
+      },
     };
 
     const [result] = await describeSamples([composite], source);
 
-    expect(result?.description).toBeUndefined();
+    expect(result?.description).toBe("Apollo Federation gateway");
+  });
+
+  it("is described by the one sub-project that answers", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async (path) =>
+        path.includes("users-application")
+          ? "Apollo Federation users subgraph"
+          : undefined,
+    };
+
+    const [result] = await describeSamples([composite], source);
+
+    expect(result?.description).toBe("Apollo Federation users subgraph");
   });
 
   it("has no description when every sub-project fails", async () => {
@@ -170,9 +188,9 @@ describe("describeSamples, for a composite sample", () => {
 });
 
 // Review Focus 1, end to end. While nestjs/nest#18009 is unmerged every
-// manifest carries the same boilerplate; the composite must come out of
-// combining with that same string, so suppression counts it with the singles
-// and the picker looks exactly as it does today.
+// manifest carries the same boilerplate; the composite must come out carrying
+// that same string, so suppression counts it with the singles and the picker
+// looks exactly as it does today.
 describe("describeSamples, before upstream descriptions become meaningful", () => {
   it("suppresses the boilerplate on the composite as well as the singles", async () => {
     const boilerplate = "Nest TypeScript starter repository";
@@ -241,7 +259,7 @@ describe("describeSamples, publishing results as they arrive", () => {
     expect(result.map((s) => s.description)).toEqual(snapshots[3]);
   });
 
-  it("leaves a composite undescribed until two sub-projects have answered", async () => {
+  it("describes a composite from its first answer and does not revise it", async () => {
     const descriptions: Record<string, string> = {
       gateway: "Code-first Apollo Federation gateway",
       "posts-application": "Code-first Apollo Federation subgraph for posts",
@@ -258,9 +276,9 @@ describe("describeSamples, publishing results as they arrive", () => {
     });
 
     expect(snapshots).toEqual([
-      undefined,
-      "Code-first Apollo Federation",
-      "Code-first Apollo Federation",
+      "Code-first Apollo Federation gateway",
+      "Code-first Apollo Federation gateway",
+      "Code-first Apollo Federation gateway",
     ]);
   });
 

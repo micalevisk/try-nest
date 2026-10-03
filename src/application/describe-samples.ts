@@ -1,8 +1,5 @@
 import { manifestPathsFor } from "../domain/catalog.ts";
-import {
-  sharedDescriptionPrefix,
-  withoutUninformativeDescriptions,
-} from "../domain/description.ts";
+import { withoutUninformativeDescriptions } from "../domain/description.ts";
 import type { Sample } from "../domain/sample.ts";
 import type { SampleMetadataSource } from "./ports.ts";
 
@@ -15,12 +12,11 @@ export interface DescribeSamplesOptions {
    * Called with a complete catalog every time a description lands, so a caller
    * that stops waiting early still has what arrived.
    *
-   * The snapshot is built by the same combine-then-suppress pipeline as the
-   * returned value — never a half-built one — so a caller can render it
-   * directly. It is therefore a fair picture of the catalog at that instant,
-   * not a prediction: a composite with one answer so far has no description,
-   * and a repeated description is only suppressed once enough copies of it
-   * have arrived to meet the rule.
+   * The snapshot runs the same pick-then-suppress pipeline as the returned
+   * value — never a half-built one — so a caller can render it directly. It is
+   * therefore a fair picture of the catalog at that instant, not a prediction:
+   * a repeated description is only suppressed once enough copies of it have
+   * arrived to meet the rule.
    *
    * Optional, and never required for correctness. A throw from it is swallowed
    * like any other failure here: enrichment must not be able to fail the run.
@@ -38,8 +34,8 @@ interface Lookup {
  * Resolves every sample's description concurrently, tolerating partial failure.
  *
  * The unit of work is a manifest, not a sample: a composite owns one per
- * sub-project and is described by the phrase they share, because no single
- * sub-project speaks for the whole sample (ADR-0009).
+ * sub-project, and the first of them to carry a description speaks for the
+ * whole sample, verbatim (ADR-0009).
  *
  * This never rejects. A description is an enhancement: losing one, or all of
  * them, must leave a usable catalog behind (ADR-0006).
@@ -61,16 +57,16 @@ export async function describeSamples(
   const answers = new Array<string | undefined>(lookups.length);
 
   /**
-   * The whole pipeline over whatever has answered so far: combine each
-   * sample's manifests, then suppress across samples. One function, so a
-   * snapshot and the final result can never diverge — if suppression ran only
-   * at the end, a caller rendering a snapshot would show the boilerplate the
-   * complete run hides (ADR-0009).
+   * The whole pipeline over whatever has answered so far: pick each sample's
+   * description, then suppress across samples. One function, so a snapshot and
+   * the final result can never diverge — if suppression ran only at the end, a
+   * caller rendering a snapshot would show the boilerplate the complete run
+   * hides (ADR-0009).
    */
   function catalogSoFar(): readonly Sample[] {
     // Only what actually arrived: a sub-project that failed or answered with
-    // nothing simply is not here, which is what lets a composite still
-    // describe itself from the rest.
+    // nothing simply is not here, which is what lets a composite fall back to
+    // the next one.
     const arrived: string[][] = samples.map(() => []);
     for (const [index, lookup] of lookups.entries()) {
       const answer = answers[index];
@@ -79,11 +75,11 @@ export async function describeSamples(
     }
 
     const enriched = samples.map((sample, index) => {
-      const found = arrived[index] ?? [];
-      const description =
-        sample.layout === "composite"
-          ? sharedDescriptionPrefix(found)
-          : found[0];
+      // Verbatim, and the same rule for both layouts. A composite has no
+      // manifest of its own, so its first sub-project to answer stands in for
+      // it; ordering is lookup order, not arrival order, so the borrowed text
+      // does not depend on which request won the race (ADR-0009).
+      const description = (arrived[index] ?? [])[0];
 
       if (description === undefined || description.length === 0) return sample;
       return { ...sample, description };

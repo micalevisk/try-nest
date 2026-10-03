@@ -99,5 +99,5 @@ when written. Inquirer renders a choice's description as a footer for the
 highlighted row, so one row was annotated. It became true on 2026-10-03, when the
 picker started rendering each description inline on its own row as well.
 
-A composite's description is no longer borrowed from its first sub-project; see
-[ADR-0009](./0009-derived-composite-descriptions.md).
+Which manifest describes a composite sample is answered by
+[ADR-0009](./0009-borrowed-composite-descriptions.md).
