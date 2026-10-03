@@ -15,9 +15,10 @@ presenting it as the whole sample's.
 That answer was invisible while it was wrong. Upstream's manifests described
 themselves as "Nest TypeScript starter repository" almost uniformly, so the
 borrowed description was suppressed along with everyone else's and nobody saw
-it. [`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009) gives every
-manifest a description that says what it demonstrates, and the moment it merges
-the gateway's description starts standing in for a three-project sample.
+it. [`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009) proposes
+giving every manifest a description that says what it demonstrates, and the
+moment it merges the gateway's description starts standing in for a
+three-project sample.
 
 ## Decision
 

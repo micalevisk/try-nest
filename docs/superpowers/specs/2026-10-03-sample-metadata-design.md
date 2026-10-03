@@ -136,6 +136,15 @@ composite contributes three. Concurrency stays at 8.
 Unchanged: the function never rejects, individual failures resolve to `undefined`,
 and `withoutUninformativeDescriptions` still runs over the result.
 
+**An optional `onPartial` publishes the catalog as answers land.** The signature
+and return value are otherwise untouched; a caller that does not pass it sees no
+difference. Each snapshot is produced by the same combine-then-suppress pipeline
+as the returned value, never a half-built one, so a caller can render a snapshot
+directly and a composite with one answer so far still has no description. This
+is what lets the deadline in `run.ts` bound how long the user waits without
+bounding how much of the answer survives: six waves of eight requests is a long
+way to get nothing back from.
+
 ### CLI
 
 **`prompts.ts`: each row renders `id`, padding, truncated description.**
@@ -192,20 +201,42 @@ the merge.
 
 ## How this behaves before the merge
 
-The picker renders inline rows with no descriptions in them, because
-`withoutUninformativeDescriptions` still strips the boilerplate — identical to
-today's output. Composites read three manifests instead of one and still
-show nothing: the shared prefix of three identical boilerplate strings is that
-same boilerplate, which `withoutUninformativeDescriptions` then strips along with
-every other sample's. The two steps compose in that order by construction —
-combine per sample, then suppress across samples. The only observable cost is four extra requests.
+Almost every row stays bare, and **one does not**. Taking the 37-sample catalog
+as upstream has it today:
+
+- 33 single samples and the code-first composite carry "Nest TypeScript starter
+  repository". The composite reads three manifests instead of one and comes out
+  with that same string, because the shared prefix of three identical
+  descriptions is that description. Thirty-four repeats out of 37 trips
+  `withoutUninformativeDescriptions`, so all 34 rows render bare — exactly as
+  they do today. The two steps compose in that order by construction: combine
+  per sample, then suppress across samples.
+- One single sample and the schema-first composite have no description to show.
+  The composite's three sub-projects all answer with an empty string, so nothing
+  is derived for it.
+- **One single sample carries "Nest Babel starter repository", and that row
+  changes.** It repeats once, so the suppression rule keeps it — correctly: a
+  description one sample has is a description that distinguishes it. Today that
+  text reaches only inquirer's footer, and then only while the row is
+  highlighted. With inline rows it is also drawn on the row itself.
+
+So pre-merge output is not byte-identical to today's, and should not be. Making
+it identical would mean suppressing descriptions that repeat once, which would
+throw away the informative ones along with this one and defeat the whole change
+the moment #18009 merges. The right statement is the narrower one: the
+boilerplate stays invisible, and the one sample whose description is not
+boilerplate becomes visible.
+
+The only other observable cost is four extra requests.
 
 ## Success criteria
 
 - After the merge, every single sample's row carries its own description, and
   both federation composites carry the phrase their sub-projects share rather
   than their gateway's description.
-- Before the merge, output is unchanged from today.
+- Before the merge, every row carrying the boilerplate renders exactly as it
+  does today — bare. The one sample whose description is not boilerplate gains
+  that text inline, where previously it reached only the footer.
 - With metadata unreachable, the picker is exactly what it is now.
 - At 40 columns, no row wraps *because of a description*. An id wider than the
   terminal still overflows, exactly as it does today: identity is never
