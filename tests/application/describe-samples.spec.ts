@@ -191,3 +191,90 @@ describe("describeSamples, before upstream descriptions become meaningful", () =
     ]);
   });
 });
+
+// The deadline in run.ts bounds how long the picker waits, not how much of the
+// answer it gets to keep. That only works if describeSamples publishes what it
+// has while it still has work in flight.
+describe("describeSamples, publishing results as they arrive", () => {
+  it("reports a snapshot each time a description lands", async () => {
+    const snapshots: ReadonlyArray<string | undefined>[] = [];
+    const source: SampleMetadataSource = {
+      readDescription: async (path) => `describes ${path}`,
+    };
+
+    const result = await describeSamples(samples, source, {
+      concurrency: 1,
+      onPartial: (partial) => {
+        snapshots.push(partial.map((s) => s.description));
+      },
+    });
+
+    expect(snapshots).toHaveLength(4);
+    expect(snapshots[0]).toEqual([
+      "describes sample/01-a/package.json",
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    expect(snapshots.at(-1)).toEqual(result.map((s) => s.description));
+  });
+
+  it("suppresses boilerplate in a partial snapshot exactly as in the final one", async () => {
+    const boilerplate = "Nest TypeScript starter repository";
+    const snapshots: ReadonlyArray<string | undefined>[] = [];
+    const source: SampleMetadataSource = {
+      readDescription: async () => boilerplate,
+    };
+
+    const result = await describeSamples(samples, source, {
+      concurrency: 1,
+      onPartial: (partial) => {
+        snapshots.push(partial.map((s) => s.description));
+      },
+    });
+
+    // Three of four repeats is where the rule arms. From there on a snapshot
+    // must look like the final result, or a user who hits the deadline late
+    // sees boilerplate a complete run would have hidden.
+    expect(snapshots[2]).toEqual([undefined, undefined, undefined, undefined]);
+    expect(snapshots[3]).toEqual([undefined, undefined, undefined, undefined]);
+    expect(result.map((s) => s.description)).toEqual(snapshots[3]);
+  });
+
+  it("leaves a composite undescribed until two sub-projects have answered", async () => {
+    const descriptions: Record<string, string> = {
+      gateway: "Code-first Apollo Federation gateway",
+      "posts-application": "Code-first Apollo Federation subgraph for posts",
+      "users-application": "Code-first Apollo Federation subgraph for users",
+    };
+    const snapshots: (string | undefined)[] = [];
+    const source: SampleMetadataSource = {
+      readDescription: async (path) => descriptions[path.split("/")[2] ?? ""],
+    };
+
+    await describeSamples([composite], source, {
+      concurrency: 1,
+      onPartial: (partial) => void snapshots.push(partial[0]?.description),
+    });
+
+    expect(snapshots).toEqual([
+      undefined,
+      "Code-first Apollo Federation",
+      "Code-first Apollo Federation",
+    ]);
+  });
+
+  it("still never rejects when the partial callback throws", async () => {
+    const source: SampleMetadataSource = {
+      readDescription: async (path) => `describes ${path}`,
+    };
+
+    const result = await describeSamples(samples, source, {
+      onPartial: () => {
+        throw new Error("the renderer blew up");
+      },
+    });
+
+    expect(result[0]?.description).toBe("describes sample/01-a/package.json");
+  });
+});

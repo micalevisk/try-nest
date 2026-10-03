@@ -134,6 +134,28 @@ describe("run", () => {
     expect(lines.join("\n")).toContain("01-cats-app");
   });
 
+  // --list sits above the enrichment block on purpose: the listing costs one
+  // request, annotating it would cost one per manifest, and scripts use this
+  // path more than any other. Moving enrichment above it would still pass
+  // every other test in this file.
+  it("asks for no descriptions at all when only listing", async () => {
+    const asked: string[] = [];
+    const { deps, lines } = depsWith({
+      metadata: {
+        readDescription: async (path) => {
+          asked.push(path);
+          return undefined;
+        },
+      },
+    });
+
+    const code = await run(["--list"], deps, nonInteractive);
+
+    expect(code).toBe(0);
+    expect(lines.join("\n")).toContain("01-cats-app");
+    expect(asked).toEqual([]);
+  });
+
   it("exits 2 for an unknown sample", async () => {
     const { deps, lines } = depsWith();
 
@@ -448,4 +470,46 @@ describe("run enrichment lifetime", () => {
     expect(signals.length).toBeGreaterThan(0);
     expect(signals.every((signal) => signal.aborted)).toBe(true);
   }, 10_000);
+});
+
+describe("run enrichment partial results", () => {
+  it("keeps the descriptions that arrived before the deadline", async () => {
+    const offered: string[] = [];
+
+    const { deps } = depsWith({
+      metadata: {
+        readDescription: async (path) => {
+          // One manifest answers at once; the other is served by a host that
+          // accepts the connection and never replies.
+          if (path.includes("01-cats-app")) return "A REST API over cats";
+          await new Promise(() => {});
+          return undefined;
+        },
+      },
+      interaction: {
+        chooseSample: async (samples) => {
+          for (const sample of samples) {
+            offered.push(`${sample.id}=${sample.description ?? ""}`);
+          }
+          return samples[0] as never;
+        },
+        chooseTargetDirectory: async (suggested) => suggested,
+        confirmInstall: async () => false,
+        choosePackageManager: async () => "npm",
+      },
+    });
+
+    const root = await mkdtemp(join(tmpdir(), "try-nest-run-"));
+    const code = await run(
+      ["--dir", join(root, "cats"), "--no-install"],
+      deps,
+      interactive,
+    );
+
+    expect(code).toBe(0);
+    expect(offered).toEqual([
+      "01-cats-app=A REST API over cats",
+      "02-gateways=",
+    ]);
+  }, 15_000);
 });

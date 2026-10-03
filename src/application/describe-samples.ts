@@ -11,6 +11,21 @@ const DEFAULT_CONCURRENCY = 8;
 export interface DescribeSamplesOptions {
   readonly concurrency?: number;
   readonly signal?: AbortSignal;
+  /**
+   * Called with a complete catalog every time a description lands, so a caller
+   * that stops waiting early still has what arrived.
+   *
+   * The snapshot is built by the same combine-then-suppress pipeline as the
+   * returned value — never a half-built one — so a caller can render it
+   * directly. It is therefore a fair picture of the catalog at that instant,
+   * not a prediction: a composite with one answer so far has no description,
+   * and a repeated description is only suppressed once enough copies of it
+   * have arrived to meet the rule.
+   *
+   * Optional, and never required for correctness. A throw from it is swallowed
+   * like any other failure here: enrichment must not be able to fail the run.
+   */
+  readonly onPartial?: (samples: readonly Sample[]) => void;
 }
 
 /** One retrieval, and the sample it answers for. */
@@ -44,6 +59,50 @@ export async function describeSamples(
   }
 
   const answers = new Array<string | undefined>(lookups.length);
+
+  /**
+   * The whole pipeline over whatever has answered so far: combine each
+   * sample's manifests, then suppress across samples. One function, so a
+   * snapshot and the final result can never diverge — if suppression ran only
+   * at the end, a caller rendering a snapshot would show the boilerplate the
+   * complete run hides (ADR-0009).
+   */
+  function catalogSoFar(): readonly Sample[] {
+    // Only what actually arrived: a sub-project that failed or answered with
+    // nothing simply is not here, which is what lets a composite still
+    // describe itself from the rest.
+    const arrived: string[][] = samples.map(() => []);
+    for (const [index, lookup] of lookups.entries()) {
+      const answer = answers[index];
+      if (answer === undefined || answer.length === 0) continue;
+      arrived[lookup.sampleIndex]?.push(answer);
+    }
+
+    const enriched = samples.map((sample, index) => {
+      const found = arrived[index] ?? [];
+      const description =
+        sample.layout === "composite"
+          ? sharedDescriptionPrefix(found)
+          : found[0];
+
+      if (description === undefined || description.length === 0) return sample;
+      return { ...sample, description };
+    });
+
+    return withoutUninformativeDescriptions(enriched);
+  }
+
+  const { onPartial } = options;
+
+  function publish(): void {
+    if (onPartial === undefined) return;
+    try {
+      onPartial(catalogSoFar());
+    } catch {
+      // A caller that cannot take the news does not get to fail the run.
+    }
+  }
+
   let cursor = 0;
 
   async function worker(): Promise<void> {
@@ -64,6 +123,10 @@ export async function describeSamples(
         // Individual failures are expected and uninteresting.
         answers[index] = undefined;
       }
+
+      // Nothing arrived means nothing changed, so there is nothing to report.
+      const answer = answers[index];
+      if (answer !== undefined && answer.length > 0) publish();
     }
   }
 
@@ -71,24 +134,5 @@ export async function describeSamples(
     Array.from({ length: Math.min(concurrency, lookups.length) }, worker),
   );
 
-  // Only what actually arrived: a sub-project that failed or answered with
-  // nothing simply is not here, which is what lets a composite still describe
-  // itself from the rest.
-  const arrived: string[][] = samples.map(() => []);
-  for (const [index, lookup] of lookups.entries()) {
-    const answer = answers[index];
-    if (answer === undefined || answer.length === 0) continue;
-    arrived[lookup.sampleIndex]?.push(answer);
-  }
-
-  const enriched = samples.map((sample, index) => {
-    const found = arrived[index] ?? [];
-    const description =
-      sample.layout === "composite" ? sharedDescriptionPrefix(found) : found[0];
-
-    if (description === undefined || description.length === 0) return sample;
-    return { ...sample, description };
-  });
-
-  return withoutUninformativeDescriptions(enriched);
+  return catalogSoFar();
 }
