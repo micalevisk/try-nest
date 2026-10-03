@@ -75,6 +75,24 @@ export function manifestPathFor(sample: Sample): string {
   return `${SAMPLES_ROOT}/${sample.id}${suffix}/${MANIFEST_FILENAME}`;
 }
 
+/**
+ * Every manifest that describes this sample.
+ *
+ * A single sample owns one. A composite owns none of its own, so it answers
+ * with its sub-projects' — all of them, because no one of them speaks for the
+ * whole sample (ADR-0009).
+ */
+export function manifestPathsFor(sample: Sample): readonly string[] {
+  if (sample.layout !== "composite") {
+    return [`${SAMPLES_ROOT}/${sample.id}/${MANIFEST_FILENAME}`];
+  }
+
+  return sample.subProjects.map(
+    (subProject) =>
+      `${SAMPLES_ROOT}/${sample.id}/${subProject}/${MANIFEST_FILENAME}`,
+  );
+}
+
 export function findSample(samples: readonly Sample[], id: string): Sample {
   const match = samples.find((sample) => sample.id === id);
   if (match !== undefined) return match;
