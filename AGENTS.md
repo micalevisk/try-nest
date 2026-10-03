@@ -63,7 +63,7 @@ Do **not** copy try-prisma's analytics interceptor (`EXAMPLES_REPO_INTERCEPTOR`,
 
 ## Upstream shape to handle
 
-`nestjs/nest/sample` holds numbered directories, currently `01-cats-app` … `36-valibot-serializer`.
+`nestjs/nest/sample` holds numbered directories, currently `01-cats-app` … `37-outbox`.
 
 Two of them are **not** a single project — they contain sibling sub-projects, each with its
 own `package.json`:

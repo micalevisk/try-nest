@@ -11,7 +11,7 @@ without notice.
 > document in the same change that fixes the code. A stale register is worse than
 > no register, because it will be trusted.
 
-**Last verified against upstream: 2026-09-27.**
+**Last verified against upstream: 2026-10-03.**
 
 ## What we assume
 
@@ -42,6 +42,7 @@ without notice.
 | C1 | A sample's manifest may carry a human description | Descriptions are absent; picker shows names only (degrades cleanly) |
 | C2 | Directory names are meaningful enough to display as-is | The picker becomes cryptic |
 | C3 | Samples install and boot with a standard package manager, unaided | The tool scaffolds something that does not run |
+| C4 | A composite sample's sub-projects describe themselves with a shared leading phrase | A composite gets no description, and in one case is left as the only row still showing boilerplate (see below) |
 
 ## Known hazards
 
@@ -119,6 +120,31 @@ it is what keeps new samples available the day they land.
 
 If it ever becomes intolerable, the lever is pinning to the latest tag; it is an
 adapter-local change, because no port mentions a revision.
+
+### Composite descriptions (C4) — soft, with one sharp edge
+
+A composite has no manifest of its own, so it is described by the leading phrase
+its sub-projects share ([ADR-0009](./adr/0009-derived-composite-descriptions.md)).
+Nothing upstream obliges them to share one, and nothing here asks them to.
+
+C4 describes a state that does not exist yet: it is recorded from
+[`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009), which is still
+open, and is not verified against a merged `master`. Today every sub-project
+shares the same boilerplate, which the picker suppresses.
+
+Usually when this breaks the composite has no description and every other sample
+is untouched. It is recorded because the failure is silent, and because someone
+reading an unlabelled composite should be able to find out why in one place
+rather than in the code.
+
+There is one case where it does not degrade cleanly. The shared phrase is trimmed
+of trailing punctuation, so a composite's derived description is returned
+byte-for-byte only when the shared phrase ends in a letter or digit. Today's
+boilerplate ("Nest TypeScript starter repository") does. If upstream's shared
+string ever gained a trailing period, the composite would carry a variant the 35
+single-project samples do not, its repeat count would fall below the threshold of
+three that cross-sample suppression requires, and the composite would become the
+one row still showing boilerplate while every other row was suppressed.
 
 ## What we deliberately do not assume
 

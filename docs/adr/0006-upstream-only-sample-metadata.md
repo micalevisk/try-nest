@@ -80,3 +80,24 @@ valuable *while choosing*; after selection the user has already decided.
 
 **No descriptions at all.** One request total, simplest possible. Rejected: it
 drops the requirement outright and leaves the picker cryptic.
+
+## Amendment · 2026-10-03
+
+Two statements above have been overtaken by events, and are corrected here rather
+than edited in place.
+
+**"Upstream descriptions are sparse and inconsistent"** (under *Bad*) was true
+when written: 36 of 41 manifests described themselves as "Nest TypeScript starter
+repository". [`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009)
+proposes giving every sample a description of what it demonstrates; it is still
+open. The cost stands until that merges, and the computed suppression rule is what
+keeps the picker clean in the meantime — it disables itself once descriptions
+become distinct, and re-arms if upstream regresses.
+
+**"Every row is annotated, not just the selected one"** (under *Good*) was false
+when written. Inquirer renders a choice's description as a footer for the
+highlighted row, so one row was annotated. It became true on 2026-10-03, when the
+picker started rendering each description inline on its own row as well.
+
+A composite's description is no longer borrowed from its first sub-project; see
+[ADR-0009](./0009-derived-composite-descriptions.md).

@@ -18,6 +18,7 @@ is exactly what a future maintainer needs to avoid repeating it.
 | [0006](./0006-upstream-only-sample-metadata.md) | Sample metadata from upstream only, eagerly enriched | Accepted |
 | [0007](./0007-composite-samples-scaffolded-whole.md) | Multi-project samples are scaffolded whole | Accepted |
 | [0008](./0008-standalone-output-invariant.md) | Scaffolded output must be standalone | Accepted |
+| [0009](./0009-derived-composite-descriptions.md) | A composite's description is derived, never borrowed | Accepted |
 
 ## Writing a new one
 
