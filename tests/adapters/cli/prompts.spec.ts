@@ -1,6 +1,9 @@
 import { PassThrough } from "node:stream";
 import { describe, expect, it } from "vitest";
-import { createPrompts } from "../../../src/adapters/cli/prompts.ts";
+import {
+  createPrompts,
+  sampleChoices,
+} from "../../../src/adapters/cli/prompts.ts";
 import type { Interaction } from "../../../src/application/ports.ts";
 import { isTryNestError } from "../../../src/domain/errors.ts";
 import type { Sample } from "../../../src/domain/sample.ts";
@@ -140,4 +143,147 @@ describe("createPrompts() with an answer", () => {
     },
     ESCAPE_TEST_TIMEOUT_MS,
   );
+});
+
+function single(id: string, description?: string): Sample {
+  return {
+    id,
+    displayName: id,
+    layout: "single",
+    subProjects: [],
+    ...(description === undefined ? {} : { description }),
+  };
+}
+
+describe("sampleChoices", () => {
+  it("puts the description inline, aligned past the widest id", () => {
+    const [first, second] = sampleChoices(
+      [single("01-cats-app", "A REST API over cats"), single("02-gateways")],
+      80,
+    );
+
+    // Both ids are 11 wide, so the column is 11 and the gap is the two spaces.
+    expect(first?.name).toBe("01-cats-app  A REST API over cats");
+    expect(second?.name).toBe("02-gateways");
+  });
+
+  it("caps the id column at 24 so two long ids cannot eat the line", () => {
+    const [, long] = sampleChoices(
+      [
+        single("01-cats-app", "Cats"),
+        single(
+          "32-graphql-federation-schema-first",
+          "Federation, schema first",
+        ),
+      ],
+      80,
+    );
+
+    // 34 characters wide: past the column, so a single space, not alignment.
+    expect(long?.name).toBe(
+      "32-graphql-federation-schema-first Federation, schema first",
+    );
+  });
+
+  it("keeps a composite's project count on the name", () => {
+    const [choice] = sampleChoices(
+      [
+        {
+          id: "31-federation",
+          displayName: "31-federation",
+          layout: "composite",
+          subProjects: ["gateway", "posts-application"],
+          description: "Apollo Federation",
+        },
+      ],
+      80,
+    );
+
+    expect(choice?.name).toContain("31-federation  (2 projects)");
+    expect(choice?.name).toContain("Apollo Federation");
+  });
+
+  it("truncates an over-long description with an ellipsis", () => {
+    const [choice] = sampleChoices(
+      [single("01-cats-app", "x".repeat(200))],
+      60,
+    );
+
+    expect(choice?.name.length).toBeLessThanOrEqual(59);
+    expect(choice?.name.endsWith("…")).toBe(true);
+  });
+
+  it("keeps the untruncated description for inquirer's footer", () => {
+    const full = "x".repeat(200);
+    const [choice] = sampleChoices([single("01-cats-app", full)], 60);
+
+    expect(choice?.description).toBe(full);
+  });
+
+  it("drops inline descriptions rather than mangle a narrow terminal", () => {
+    const [choice] = sampleChoices(
+      [single("01-cats-app", "A REST API over cats")],
+      30,
+    );
+
+    expect(choice?.name).toBe("01-cats-app");
+    expect(choice?.description).toBe("A REST API over cats");
+  });
+
+  // The spec's success criterion, with the id widths upstream actually has:
+  // at 40 columns the id column is capped at 24, leaving too little for a
+  // description, so no row wraps *because of* one.
+  it("fits every row inside 40 columns with upstream's widest ids", () => {
+    const choices = sampleChoices(
+      [
+        single("01-cats-app", "A REST API over cats"),
+        single(
+          "32-graphql-federation-schema-first",
+          "Federation, schema first",
+        ),
+      ],
+      40,
+    );
+
+    expect(choices.map((choice) => choice.name)).toEqual([
+      "01-cats-app",
+      "32-graphql-federation-schema-first",
+    ]);
+  });
+
+  // Review Focus 4.
+  it("renders a terminal narrower than the id without wrapping or throwing", () => {
+    const [choice] = sampleChoices(
+      [single("32-graphql-federation-schema-first", "Federation")],
+      10,
+    );
+
+    expect(choice?.name).toBe("32-graphql-federation-schema-first");
+  });
+
+  it("falls back to 80 columns when the stream reports none", () => {
+    const [choice] = sampleChoices(
+      [single("01-cats-app", "A REST API over cats")],
+      undefined,
+    );
+
+    expect(choice?.name).toBe("01-cats-app  A REST API over cats");
+  });
+
+  // Review Focus 2. One newline in a row corrupts inquirer's redraw for the
+  // rest of the prompt, and manifest descriptions are free text.
+  it("collapses whitespace so a multi-line description cannot break the redraw", () => {
+    const [choice] = sampleChoices(
+      [single("01-cats-app", "  A REST API\nover\t cats  ")],
+      80,
+    );
+
+    expect(choice?.name).toBe("01-cats-app  A REST API over cats");
+    expect(choice?.description).toBe("A REST API over cats");
+  });
+
+  // Review Focus 5.
+  it("renders an empty catalog as no choices", () => {
+    expect(sampleChoices([], 80)).toEqual([]);
+  });
 });
