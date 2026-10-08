@@ -11,6 +11,11 @@ const MINIMUM_REPEATS = 3;
  * Deliberately a computed rule and not a list of known boilerplate strings: it
  * needs no maintenance, and it stops suppressing on its own once upstream
  * descriptions become distinct.
+ *
+ * **Do not delete this once upstream descriptions become meaningful.** It is
+ * the only thing keeping today's output clean while `nestjs/nest#18009` is
+ * unmerged, it disables itself the moment that lands, and it re-arms by itself
+ * if upstream ever regresses.
  */
 export function withoutUninformativeDescriptions(
   samples: readonly Sample[],

@@ -19,7 +19,8 @@ export type ProgressStream = NodeJS.WritableStream & {
 const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const FRAME_INTERVAL_MS = 80;
 const CLEAR_LINE = "\r\x1b[K";
-const FALLBACK_COLUMNS = 80;
+/** What to assume when a stream does not know how wide it is. */
+export const FALLBACK_COLUMNS = 80;
 
 export function createProgress(
   stream: ProgressStream = process.stderr,

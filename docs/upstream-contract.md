@@ -11,7 +11,7 @@ without notice.
 > document in the same change that fixes the code. A stale register is worse than
 > no register, because it will be trusted.
 
-**Last verified against upstream: 2026-09-27.**
+**Last verified against upstream: 2026-10-03.**
 
 ## What we assume
 
@@ -42,6 +42,7 @@ without notice.
 | C1 | A sample's manifest may carry a human description | Descriptions are absent; picker shows names only (degrades cleanly) |
 | C2 | Directory names are meaningful enough to display as-is | The picker becomes cryptic |
 | C3 | Samples install and boot with a standard package manager, unaided | The tool scaffolds something that does not run |
+| C4 | A composite sample's first sub-project describes the sample well enough to pick it by | A composite's row describes one of its sub-projects rather than the sample (see below) |
 
 ## Known hazards
 
@@ -119,6 +120,39 @@ it is what keeps new samples available the day they land.
 
 If it ever becomes intolerable, the lever is pinning to the latest tag; it is an
 adapter-local change, because no port mentions a revision.
+
+### Composite descriptions (C4) — soft, and already partly broken
+
+A composite has no manifest of its own, so it borrows the description of the
+first sub-project that has one
+([ADR-0009](./adr/0009-borrowed-composite-descriptions.md)). Nothing upstream
+obliges that sub-project to describe the whole sample, and nothing here asks it
+to.
+
+C4 holds vacuously today. Every sub-project of the code-first composite carries
+the same boilerplate, which the picker suppresses along with 33 of the 35
+single-project samples, and the schema-first composite's sub-projects carry empty
+descriptions, so neither composite shows anything at all. Recorded from
+[`nestjs/nest#18009`](https://github.com/nestjs/nest/pull/18009), which is still
+open, and not verified against a merged `master`.
+
+It is listed as an assumption because of how it breaks when `#18009` lands: not
+into silence, but into a true statement about a third of the sample presented as
+a statement about all of it. `31-graphql-federation-code-first` will be labelled
+with its gateway's description. That is accepted rather than fixed — see the
+*Bad* section of ADR-0009, which also names the derivation to bring back if the
+borrowed text ever becomes actively misleading.
+
+Two things that *cannot* go wrong here, and used to be able to:
+
+- The borrowed text is never transformed, so it is always byte-identical to what
+  upstream wrote. A composite therefore always counts as a repeat alongside the
+  single-project samples carrying the same string, and can never be left as the
+  one row still showing boilerplate.
+- A partial failure cannot change what a composite says, only whether it says
+  anything: sub-projects are picked in `subProjects` order, so a lost request
+  moves the choice down the list rather than producing a phrase assembled from
+  whichever requests happened to win.
 
 ## What we deliberately do not assume
 

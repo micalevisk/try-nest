@@ -49,6 +49,20 @@ true and always says so: nothing was written, and there is nothing to clean up.
   an error state.
 - Composite samples should be visibly distinguishable, since choosing one produces
   several projects rather than one.
+- Each row must carry its own description, not only the highlighted one. A user
+  comparing samples should not have to move the cursor to read them
+  ([ADR-0006](./adr/0006-upstream-only-sample-metadata.md)).
+- A composite pays for being distinguishable: its row carries the project count
+  as well as its id, so it overruns the id column the other rows are aligned to
+  and has fewer columns left for a description than a single sample does. At 60
+  columns the singles are annotated and the two composites are not. Nothing
+  breaks — identity still wins over description — but the two are not annotated
+  at the same terminal width.
+- A description may be clipped to fit the terminal; a sample's identity may not.
+  The full text must stay reachable for whichever row the user is on.
+- When the terminal is too narrow for a description to be worth anything, the
+  picker drops descriptions and renders names alone. A mangled row is worse than
+  an unannotated one.
 
 In a terminal, this merge is bounded rather than continuous: a `select` prompt
 cannot redraw its choices once open, so the CLI adapter waits on enrichment

@@ -13,7 +13,7 @@ import {
   RAW_CONTENT_BASE,
 } from "../../src/adapters/github/constants.ts";
 import { createTreeCatalogSource } from "../../src/adapters/github/tree-catalog-source.ts";
-import { buildCatalog, manifestPathFor } from "../../src/domain/catalog.ts";
+import { buildCatalog, manifestPathsFor } from "../../src/domain/catalog.ts";
 
 const live = process.env.TRY_NEST_LIVE === "1";
 
@@ -46,9 +46,10 @@ describe.skipIf(!live)("upstream contract", () => {
     const first = catalog[0];
     if (first === undefined) throw new Error("catalog was empty");
 
-    const response = await fetch(
-      `${RAW_CONTENT_BASE}/${manifestPathFor(first)}`,
-    );
+    const [manifestPath] = manifestPathsFor(first);
+    if (manifestPath === undefined) throw new Error("sample had no manifest");
+
+    const response = await fetch(`${RAW_CONTENT_BASE}/${manifestPath}`);
 
     expect(response.ok).toBe(true);
   }, 30_000);
