@@ -6,6 +6,15 @@
 ##
 ## The whole process must take at most 3 minutes.
 ##
+## Authentication to the NPM registry is trusted publishing (OIDC): the job
+## mints a short-lived id-token and `@semantic-release/npm` exchanges it with
+## the registry, so there is no `NPM_TOKEN` secret to rotate. This needs a
+## trusted publisher configured for the `try-nest` package on npmjs.com,
+## pointing at this repository and this workflow file. A long-lived token is
+## not an option anymore: npm revoked classic tokens, and granular ones demand
+## a one-time password on publish unless they opt out of 2FA, which is what
+## made the 1.1.0 release fail with `EOTP`.
+##
 
 name: 'Release & publish to NPM Registry'
 
@@ -21,15 +30,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
-      contents: write
+      contents: write # for the release commit and tag
+      id-token: write # for npm trusted publishing (OIDC)
     steps:
       ##########################################################################
       ######################### Prepare the environment ########################
       ##########################################################################
       - name: 'Checkout the repository'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: 'Use node24'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '24.x'
           cache: 'npm'
@@ -41,4 +51,3 @@ jobs:
         run: 'npx semantic-release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
