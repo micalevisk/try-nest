@@ -37,9 +37,9 @@ jobs:
       ######################### Prepare the environment ########################
       ##########################################################################
       - name: 'Checkout the repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: 'Use node24'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24.x'
           cache: 'npm'
