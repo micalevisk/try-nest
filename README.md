@@ -8,8 +8,6 @@ Just run the following in your terminal:
 
 ```sh
 npx try-nest
-## alternatively:
-npx try-nestjs
 ```
 
 or, if you want to make sure that you're using the latest version available:
